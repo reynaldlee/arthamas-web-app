@@ -1,26 +1,39 @@
+import { JwtPayload } from "./../types/user.types";
 import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
-import { NodeHTTPCreateContextFnOptions } from "@trpc/server/dist/declarations/src/adapters/node-http";
-import { IncomingMessage } from "http";
-import ws from "ws";
 import * as jwt from "jsonwebtoken";
+import nookies from "nookies";
 
 // The app's context - is generated for each incoming request
 export async function createContext({
   req,
   res,
-}:
-  | trpcNext.CreateNextContextOptions
-  | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>) {
+}: trpcNext.CreateNextContextOptions) {
   // Create your context based on the request object
   // Will be available as `ctx` in all your resolvers
 
   // This is just an example of something you'd might want to do in your ctx fn
   async function getUserFromHeader() {
     if (req.headers.authorization) {
-      const user = await jwt.decode(req.headers.authorization.split(" ")[1]);
+      // get token from authoriztion header
+      const user = jwt.verify(
+        req.headers.authorization.split(" ")[1],
+        process.env.JWT_SECRET!
+      ) as JwtPayload;
       return user;
     }
+
+    const cookies = nookies.get({ req });
+
+    if (cookies.session) {
+      // get token from session cookies
+      const user = jwt.verify(
+        cookies.session,
+        process.env.JWT_SECRET!
+      ) as JwtPayload;
+      return user;
+    }
+
     return null;
   }
   const user = await getUserFromHeader();

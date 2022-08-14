@@ -1,14 +1,19 @@
 import type { AppType } from "next/dist/shared/lib/utils";
-import type { FunctionComponent, ReactElement, ReactNode } from "react";
-import type { NextPage } from "next";
-import type { AppProps } from "next/app";
 
 import { withTRPC } from "@trpc/next";
 import { AppRouter } from "./api/trpc/[trpc]";
 import superjson from "superjson";
+import ThemeProviderWrapper from "src/theme/ThemeProvider";
+import { OrgProvider } from "src/context/OrganizationContext";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
+  return (
+    <ThemeProviderWrapper>
+      <OrgProvider>
+        <Component {...pageProps} />
+      </OrgProvider>
+    </ThemeProviderWrapper>
+  );
 };
 
 export default withTRPC<AppRouter>({
@@ -18,5 +23,5 @@ export default withTRPC<AppRouter>({
       transformer: superjson,
     };
   },
-  ssr: true,
+  // ssr: true,
 })(MyApp);

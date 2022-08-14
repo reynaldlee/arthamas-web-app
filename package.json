@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -15,7 +16,10 @@
     "@emotion/react": "^11.10.0",
     "@emotion/styled": "^11.10.0",
     "@mui/icons-material": "^5.8.4",
+    "@mui/lab": "^5.0.0-alpha.94",
     "@mui/material": "^5.10.0",
+    "@mui/x-data-grid": "^5.15.2",
+    "@mui/x-date-pickers": "^5.0.0-beta.5",
     "@prisma/client": "4.2.1",
     "@trpc/client": "^9.27.0",
     "@trpc/next": "^9.27.0",
@@ -23,11 +27,16 @@
     "@trpc/server": "^9.27.0",
     "bcrypt": "^5.0.1",
     "jsonwebtoken": "^8.5.1",
+    "jwt-decode": "^3.1.2",
     "mui-datatables": "^4.2.2",
     "next": "12.2.5",
     "next-auth": "^4.10.3",
+    "nookies": "^2.5.2",
     "react": "18.2.0",
+    "react-data-grid": "^7.0.0-beta.15",
     "react-dom": "18.2.0",
+    "react-hook-form": "^7.34.1",
+    "react-hook-form-mui": "^5.3.2",
     "react-query": "3",
     "superjson": "^1.9.1",
     "ws": "^8.8.1",
@@ -36,7 +45,9 @@
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",
     "@types/jsonwebtoken": "^8.5.8",
+    "@types/mui-datatables": "^3.7.9",
     "@types/node": "^18.7.1",
+    "@types/nookies": "^2.0.3",
     "@types/react": "18.0.17",
     "@types/react-dom": "18.0.6",
     "@types/ws": "^8.5.3",

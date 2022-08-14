@@ -27,7 +27,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "src/pages/management/suppliers copy"
+    "src/pages/management/suppliers copy",
+    "src/theme/schemes/PureLightTheme.js"
   ],
   "exclude": ["node_modules"]
 }

@@ -1,18 +1,39 @@
 import { ReactElement } from "react";
-import MainLayout from "@/components/Layouts/MainLayout";
+import MainLayout from "@/components/layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
-import { Input, TextField } from "@mui/material";
+
+import { useRouter } from "next/router";
+import OrganizationForm, {
+  OrgFormValues,
+} from "@/components/forms/OrganizationForm";
+import type { OrgFormSubmitHandler } from "@/components/forms/OrganizationForm";
+import { FormHelperText, Typography } from "@mui/material";
 
 export default function OrganizationCreatePage() {
-  const { data } = trpc.useQuery(["org.findAll", { q: "test" }]);
+  const router = useRouter();
+
+  const {
+    mutate: submit,
+    error,
+    isError,
+  } = trpc.useMutation(["org.create"], {
+    onSuccess: () => {
+      router.push("/management/organizations");
+    },
+  });
+
+  const onSave: OrgFormSubmitHandler<OrgFormValues> = (data) => {
+    submit(data);
+  };
 
   return (
     <MainLayout>
-      <>
-        <TextField name="orgId"></TextField>
-        <TextField name="name"></TextField>
-        <TextField name="address"></TextField>
-      </>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Create New Organization
+      </Typography>
+
+      <OrganizationForm onSubmit={onSave}></OrganizationForm>
+      <FormHelperText error={isError}>{error?.message}</FormHelperText>
     </MainLayout>
   );
 }

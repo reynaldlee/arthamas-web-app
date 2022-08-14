@@ -5,21 +5,23 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
-import InboxIcon from "@mui/icons-material/MoveToInbox";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import MailIcon from "@mui/icons-material/Mail";
 import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import menuItems from "../../menu";
+import menuItems from "../../menuItems";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { trpc } from "@/utils/trpc";
+import { useOrganization } from "src/context/OrganizationContext";
+import { KeyboardArrowDown } from "@mui/icons-material";
 
-const drawerWidth = 240;
+const drawerWidth = 280;
 
 interface Props {
   /**
@@ -27,13 +29,22 @@ interface Props {
    * You won't need it on your project.
    */
   window?: () => Window;
-  children?: JSX.Element | string | JSX.Element[];
+  children?: JSX.Element | string | (JSX.Element | null)[];
 }
 
 export default function MainLayout(props: Props) {
   const { window } = props;
   const router = useRouter();
+  const { orgCode, changeOrg } = useOrganization();
+
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [expandedMenu, setExpandedMenu] = React.useState([]);
+
+  const { data: orgData, isLoading } = trpc.useQuery(["org.me"]);
+
+  const handleChangeOrg = (e: SelectChangeEvent<string>) => {
+    changeOrg(e.target.value);
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -44,32 +55,60 @@ export default function MainLayout(props: Props) {
       <Toolbar />
       <Divider />
 
+      <Box sx={{ px: 2 }}>
+        <Select value={orgCode} fullWidth onChange={handleChangeOrg}>
+          {orgData?.data.map((org) => (
+            <MenuItem key={org.orgCode} value={org.orgCode}>
+              {org.org.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </Box>
+
       {menuItems.map((menuItem) => {
         return (
-          <>
+          <React.Fragment key={menuItem.heading}>
             <List>
               <Typography variant="overline" sx={{ marginLeft: 2 }}>
                 {menuItem.heading}
               </Typography>
 
               {menuItem.items.map((item) => (
-                <Link href={item.link || "#"} key={item.name}>
-                  <ListItem
-                    disablePadding
-                    selected={router.pathname.includes(item.link!)}
-                  >
-                    <ListItemButton>
-                      <ListItemIcon>
-                        <item.icon />
-                      </ListItemIcon>
-                      <ListItemText primary={item.name} />
-                    </ListItemButton>
-                  </ListItem>
-                </Link>
+                <>
+                  <Link href={item.link || "#"} key={item.name}>
+                    <ListItem
+                      disablePadding
+                      selected={router.pathname.includes(item.link!)}
+                    >
+                      <ListItemButton>
+                        <ListItemIcon>
+                          <item.icon />
+                        </ListItemIcon>
+                        <ListItemText primary={item.name} />
+                        {item.items ? <KeyboardArrowDown /> : null}
+                      </ListItemButton>
+                    </ListItem>
+                  </Link>
+                  <Box>
+                    {item.items?.map((subitem) => {
+                      return (
+                        <Link key={subitem.link} href={subitem.link}>
+                          <ListItem sx={{ py: 0, ml: 1 }}>
+                            <ListItemButton>
+                              <ListItemText
+                                primary={subitem.name}
+                              ></ListItemText>
+                            </ListItemButton>
+                          </ListItem>
+                        </Link>
+                      );
+                    })}
+                  </Box>
+                </>
               ))}
             </List>
             <Divider />
-          </>
+          </React.Fragment>
         );
       })}
     </div>
@@ -77,6 +116,10 @@ export default function MainLayout(props: Props) {
 
   const container =
     window !== undefined ? () => window().document.body : undefined;
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -98,7 +141,7 @@ export default function MainLayout(props: Props) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div">
+          <Typography variant="h2" noWrap component="div">
             Responsive drawer
           </Typography>
         </Toolbar>

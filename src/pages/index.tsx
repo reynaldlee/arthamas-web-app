@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import MainLayout from "../components/Layouts/MainLayout";
+import MainLayout from "../components/layouts/MainLayout";
 
 export default function Home() {
   return <MainLayout></MainLayout>;

@@ -3,6 +3,7 @@ import { Button, FormHelperText, TextField, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
+import { setCookie } from "nookies";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,7 +30,11 @@ export default function LoginPage() {
         password: fields.password,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
+          setCookie(null, "session", result.accessToken, {
+            maxAge: 24 * 60 * 60,
+            path: "/",
+          });
           router.push("/");
         },
       }

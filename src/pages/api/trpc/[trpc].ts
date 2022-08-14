@@ -1,18 +1,16 @@
-import * as trpc from "@trpc/server";
 import * as trpcNext from "@trpc/server/adapters/next";
-import { z } from "zod";
-import { createRouter } from "../../../server/createRouter";
+import { Context, createContext } from "src/server/context";
 import { appRouter } from "../../../server/routers/app";
 
 // export type definition of API
 export type AppRouter = typeof appRouter;
 
 // export API handler
-export default trpcNext.createNextApiHandler({
+export default trpcNext.createNextApiHandler<AppRouter>({
   router: appRouter,
-  createContext: () => {
-    return {
-      user: "",
-    };
+  onError: ({ error, ctx }) => {
+    if (error.code === "UNAUTHORIZED") {
+    }
   },
+  createContext: createContext,
 });

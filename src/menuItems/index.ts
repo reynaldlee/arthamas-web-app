@@ -165,11 +165,11 @@ const menuItems = [
         icon: DocumentScannerTwoToneIcon,
         link: "/sales/payments",
       },
-      {
-        name: "Sales Return",
-        icon: DocumentScannerTwoToneIcon,
-        link: "/sales/returns",
-      },
+      // {
+      //   name: "Sales Return",
+      //   icon: DocumentScannerTwoToneIcon,
+      //   link: "/sales/returns",
+      // },
     ],
   },
   {
@@ -190,11 +190,11 @@ const menuItems = [
         icon: AddShoppingCartTwoToneIcon,
         link: "/purchases/payments",
       },
-      {
-        name: "Purchase Returns",
-        icon: AddShoppingCartTwoToneIcon,
-        link: "/purchases/returns",
-      },
+      // {
+      //   name: "Purchase Returns",
+      //   icon: AddShoppingCartTwoToneIcon,
+      //   link: "/purchases/returns",
+      // },
     ],
   },
   {
