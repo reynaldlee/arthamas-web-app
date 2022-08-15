@@ -13,13 +13,14 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuIcon from "@mui/icons-material/Menu";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import menuItems from "../../menuItems";
+import menuItems, { NavMenu, NavMenuItem } from "../../menuItems";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { Collapse, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { trpc } from "@/utils/trpc";
 import { useOrganization } from "src/context/OrganizationContext";
 import { KeyboardArrowDown } from "@mui/icons-material";
+import { LoaderModal } from "../Loader";
 
 const drawerWidth = 280;
 
@@ -38,7 +39,7 @@ export default function MainLayout(props: Props) {
   const { orgCode, changeOrg } = useOrganization();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [expandedMenu, setExpandedMenu] = React.useState([]);
+  const [expandedMenu, setExpandedMenu] = React.useState<NavMenuItem[]>([]);
 
   const { data: orgData, isLoading } = trpc.useQuery(["org.me"]);
 
@@ -48,6 +49,20 @@ export default function MainLayout(props: Props) {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+  };
+
+  const handleMenuClick = (item: NavMenuItem) => () => {
+    const idx = expandedMenu.findIndex((el) => el.name === item.name);
+    const isExpanded = idx != -1;
+    if (!isExpanded) {
+      setExpandedMenu((state) => [...state, item]);
+    } else {
+      setExpandedMenu((state) => {
+        const newExpandedMenu = [...state];
+        newExpandedMenu.splice(idx);
+        return newExpandedMenu;
+      });
+    }
   };
 
   const drawer = (
@@ -80,7 +95,7 @@ export default function MainLayout(props: Props) {
                       disablePadding
                       selected={router.pathname.includes(item.link!)}
                     >
-                      <ListItemButton>
+                      <ListItemButton onClick={handleMenuClick(item)}>
                         <ListItemIcon>
                           <item.icon />
                         </ListItemIcon>
@@ -89,21 +104,28 @@ export default function MainLayout(props: Props) {
                       </ListItemButton>
                     </ListItem>
                   </Link>
-                  <Box>
-                    {item.items?.map((subitem) => {
-                      return (
-                        <Link key={subitem.link} href={subitem.link}>
-                          <ListItem sx={{ py: 0, ml: 1 }}>
-                            <ListItemButton>
-                              <ListItemText
-                                primary={subitem.name}
-                              ></ListItemText>
-                            </ListItemButton>
-                          </ListItem>
-                        </Link>
-                      );
-                    })}
-                  </Box>
+                  {item.items && (
+                    <Collapse
+                      in={
+                        expandedMenu.findIndex((el) => el.name === item.name) !=
+                        -1
+                      }
+                    >
+                      {item.items?.map((subitem) => {
+                        return (
+                          <Link key={subitem.link} href={subitem.link}>
+                            <ListItem sx={{ py: 0, ml: 1 }}>
+                              <ListItemButton>
+                                <ListItemText
+                                  primary={subitem.name}
+                                ></ListItemText>
+                              </ListItemButton>
+                            </ListItem>
+                          </Link>
+                        );
+                      })}
+                    </Collapse>
+                  )}
                 </>
               ))}
             </List>
@@ -116,10 +138,6 @@ export default function MainLayout(props: Props) {
 
   const container =
     window !== undefined ? () => window().document.body : undefined;
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -141,9 +159,7 @@ export default function MainLayout(props: Props) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h2" noWrap component="div">
-            Responsive drawer
-          </Typography>
+          <Typography variant="h2" noWrap component="div"></Typography>
         </Toolbar>
       </AppBar>
       <Box
@@ -195,6 +211,8 @@ export default function MainLayout(props: Props) {
         <Toolbar />
         <>{props.children}</>
       </Box>
+
+      <LoaderModal open={isLoading} fullScreen></LoaderModal>
     </Box>
   );
 }

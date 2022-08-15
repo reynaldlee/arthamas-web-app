@@ -1,12 +1,12 @@
 import { ReactElement } from "react";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 
 import { useRouter } from "next/router";
 import OrganizationForm, {
   OrgFormValues,
-} from "@/components/forms/OrganizationForm";
-import type { OrgFormSubmitHandler } from "@/components/forms/OrganizationForm";
+} from "@/components/Forms/OrganizationForm";
+import type { OrgFormSubmitHandler } from "@/components/Forms/OrganizationForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 export default function OrganizationCreatePage() {

@@ -1,12 +1,12 @@
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 
 import { useRouter } from "next/router";
-import OrganizationForm from "@/components/forms/OrganizationForm";
+import OrganizationForm from "@/components/Forms/OrganizationForm";
 import type {
   OrgFormSubmitHandler,
   OrgFormValues,
-} from "@/components/forms/OrganizationForm";
+} from "@/components/Forms/OrganizationForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 type RouterQuery = {

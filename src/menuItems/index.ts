@@ -28,6 +28,22 @@ import BackupTableTwoToneIcon from "@mui/icons-material/BackupTableTwoTone";
 import PermIdentityTwoToneIcon from "@mui/icons-material/PermIdentityTwoTone";
 import LocalShippingTwoToneIcon from "@mui/icons-material/LocalShippingTwoTone";
 import LocationCityTwoToneIcon from "@mui/icons-material/LocationCityTwoTone";
+import { OverridableComponent } from "@mui/material/OverridableComponent";
+import { SvgIconTypeMap } from "@mui/material";
+
+export type NavMenuItem = {
+  name: string;
+  icon?: OverridableComponent<SvgIconTypeMap<{}, "svg">> & {
+    muiName: string;
+  };
+  link?: string;
+  items?: NavMenuItem[];
+};
+
+export type NavMenu = {
+  heading: string;
+  items: NavMenuItem[];
+};
 
 const menuItems = [
   {

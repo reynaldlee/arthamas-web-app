@@ -13,6 +13,7 @@ import { JwtPayload } from "src/types/user.types";
 type OrgContextValue = {
   orgCode?: string;
   changeOrg: (orgCode: string) => Promise<void>;
+  loading: boolean;
   // setOrgCode: Dispatch<SetStateAction<string | undefined>>;
 };
 
@@ -20,6 +21,7 @@ interface Props extends PropsWithChildren {}
 
 export const OrgContext = createContext<OrgContextValue>({
   changeOrg: async () => {},
+  loading: false,
   // setOrgCode: () => {},
 });
 
@@ -29,7 +31,6 @@ export const useOrganization = () => {
 
 export const OrgProvider = ({ children }: Props) => {
   const [orgCode, setOrgCode] = useState("");
-  // const [loading, setLoading] = useState(false);
 
   const changeOrgMutation = trpc.useMutation(["auth.changeOrg"]);
 
@@ -53,7 +54,7 @@ export const OrgProvider = ({ children }: Props) => {
       value={{
         orgCode,
         changeOrg,
-        // setOrgCode,
+        loading: changeOrgMutation.isLoading,
       }}
     >
       {children}

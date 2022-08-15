@@ -52,7 +52,7 @@ model Org {
   InventoryMovement        InventoryMovement[]
   Unit                     Unit[]
   Service                  Service[]
-  Bank                     Bank[]
+  BankAccount              BankAccount[]
   ProductPrices            ProductPrices[]
   Currency                 Currency[]
   Tax                      Tax[]
@@ -77,6 +77,7 @@ model Org {
   SKTD                     SKTD[]
   SKTDItem                 SKTDItem[]
   SKTDUsage                SKTDUsage[]
+  SupplierCategory         SupplierCategory[]
 }
 
 model User {
@@ -143,13 +144,14 @@ model CustomerGroup {
 }
 
 model Customer {
-  customerCode String @db.VarChar(20)
-  name         String @db.VarChar(20)
-
+  customerCode      String          @db.VarChar(20)
+  name              String          @db.VarChar(20)
   address           String
   type              String
   customerGroup     CustomerGroup?  @relation(fields: [customerGroupCode, orgCode], references: [customerGroupCode, orgCode])
   customerGroupCode String
+  NPWP              String          @db.VarChar(40)
+  NPWPAddrees       String          @db.VarChar(255)
   orgCode           String
   org               Org             @relation(fields: [orgCode], references: [orgCode])
   createdBy         String          @db.VarChar(20)
@@ -181,6 +183,9 @@ model CustomerContact {
 model Vessel {
   vesselCode   String          @db.VarChar(20)
   regNo        String          @db.VarChar(40)
+  vesselType   String          @db.VarChar(40)
+  imoNumber    String          @db.VarChar(40)
+  teus         String          @db.VarChar(40)
   name         String          @db.VarChar(40)
   customer     Customer?       @relation(fields: [customerCode, orgCode], references: [customerCode, orgCode])
   customerCode String          @db.VarChar(20)
@@ -283,22 +288,34 @@ model Port {
 }
 
 model Supplier {
-  supplierCode   String          @db.VarChar(20)
-  name           String          @db.VarChar(40)
-  phone          String          @db.VarChar(20)
-  address        String
-  type           String
-  top            Int
-  orgCode        String          @db.VarChar(20)
-  org            Org             @relation(fields: [orgCode], references: [orgCode])
-  createdBy      String          @db.VarChar(20)
-  updatedBy      String          @db.VarChar(20)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  deletedAt      DateTime?
-  purchaseOrders PurchaseOrder[]
+  supplierCode         String           @db.VarChar(20)
+  name                 String           @db.VarChar(40)
+  phone                String           @db.VarChar(20)
+  address              String
+  type                 String
+  top                  Int
+  supplierCategoryCode String           @db.VarChar(20)
+  supplierCategory     SupplierCategory @relation(fields: [supplierCategoryCode, orgCode], references: [supplierCategoryCode, orgCode])
+  orgCode              String           @db.VarChar(20)
+  org                  Org              @relation(fields: [orgCode], references: [orgCode])
+  createdBy            String           @db.VarChar(20)
+  updatedBy            String           @db.VarChar(20)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  deletedAt            DateTime?
+  purchaseOrders       PurchaseOrder[]
 
   @@id([supplierCode, orgCode])
+}
+
+model SupplierCategory {
+  supplierCategoryCode String     @db.VarChar(20)
+  supplierCategoryName String     @db.VarChar(20)
+  Supplier             Supplier[]
+  org                  Org        @relation(fields: [orgCode], references: [orgCode])
+  orgCode              String     @db.VarChar(20)
+
+  @@id([supplierCategoryCode, orgCode])
 }
 
 model File {
@@ -326,6 +343,11 @@ model Product {
   name                String          @db.VarChar(40)
   desc                String          @db.Text
   sku                 String          @db.VarChar(20)
+  nptNumber           String          @db.VarChar(40)
+  nptValidFrom        DateTime        @db.Date
+  nptValidTo          DateTime        @db.Date
+  grade               ProductGrade    @relation(fields: [gradeCode, orgCode], references: [gradeCode, orgCode])
+  gradeCode           String          @db.VarChar(10)
   productCategoryCode String          @db.VarChar(20)
   productCategory     ProductCategory @relation(fields: [productCategoryCode, orgCode], references: [productCategoryCode, orgCode])
   createdBy           String          @db.VarChar(20)
@@ -340,6 +362,15 @@ model Product {
   SKTDItems           SKTDItem[]
 
   @@id([productCode, orgCode])
+}
+
+model ProductGrade {
+  gradeCode String    @db.VarChar(10)
+  gradeName String    @db.VarChar(40)
+  orgCode   String    @db.VarChar(20)
+  Product   Product[]
+
+  @@id([gradeCode, orgCode])
 }
 
 model ProductUnit {
@@ -402,18 +433,21 @@ model Service {
   @@id([serviceCode, orgCode])
 }
 
-model Bank {
-  bankCode  String    @db.VarChar(10)
-  name      String    @db.VarChar(40)
-  orgCode   String    @db.VarChar(20)
-  org       Org       @relation(fields: [orgCode], references: [orgCode])
-  createdBy String    @db.VarChar(20)
-  updatedBy String    @db.VarChar(20)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+model BankAccount {
+  accountNumber String    @db.VarChar(20)
+  accountName   String    @db.VarChar(40)
+  bankName      String    @db.VarChar(40)
+  currency      Currency  @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
+  currencyCode  String    @db.VarChar(20)
+  orgCode       String    @db.VarChar(20)
+  org           Org       @relation(fields: [orgCode], references: [orgCode])
+  createdBy     String    @db.VarChar(20)
+  updatedBy     String    @db.VarChar(20)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
 
-  @@id([bankCode, orgCode])
+  @@id([accountNumber, orgCode])
 }
 
 model ProductPrices {
@@ -460,6 +494,7 @@ model Currency {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   deletedAt    DateTime?
+  BankAccount  BankAccount[]
 
   @@id([currencyCode, orgCode])
 }

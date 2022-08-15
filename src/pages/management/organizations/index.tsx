@@ -1,5 +1,5 @@
 import { useId } from "react";
-import MainLayout from "@/components/layouts/MainLayout";
+import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 import { Box, Button, IconButton, Paper } from "@mui/material";
 
@@ -9,6 +9,7 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import Link from "next/link";
 import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
+import { LoaderModal } from "@/components/Loader";
 
 export default function OrganizationIndex() {
   const { data, refetch, isLoading } = trpc.useQuery(["org.findAll"]);
@@ -70,6 +71,7 @@ export default function OrganizationIndex() {
         ]}
         data={data?.data || []}
       />
+      <LoaderModal open={isLoading} />
     </MainLayout>
   );
 }
