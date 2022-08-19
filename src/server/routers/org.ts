@@ -2,6 +2,13 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
+const orgSchema = z.object({
+  orgCode: z.string().max(20),
+  name: z.string().max(40),
+  address: z.string().optional(),
+  code: z.string().max(10),
+});
+
 export const orgRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async () => {
@@ -38,12 +45,7 @@ export const orgRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: z.object({
-      orgCode: z.string().max(20),
-      name: z.string().max(40),
-      address: z.string().nullable(),
-      code: z.string().max(10),
-    }),
+    input: orgSchema,
     resolve: async ({ input, ctx }) => {
       const data = await prisma.org.create({
         data: {
@@ -60,11 +62,8 @@ export const orgRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: z.object({
-      orgCode: z.string(),
-      name: z.string().max(40).optional(),
-      address: z.string().optional(),
-      code: z.string().max(10).optional(),
+    input: orgSchema.partial().omit({ orgCode: true }).extend({
+      orgCode: orgSchema.shape.orgCode,
     }),
     resolve: async ({ input, ctx }) => {
       const { orgCode, ...updatedFields } = input;

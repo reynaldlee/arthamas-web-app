@@ -1,7 +1,15 @@
-import { createRouter } from "../createRouter";
-import { orgRouter } from "./org";
 import superjson from "superjson";
+import { supplierRouter } from "./supplier";
+import { warehouseRouter } from "./warehouse";
+import { truckRouter } from "./truck";
+import { vesselRouter } from "./vessel";
+import { userRouter } from "./users";
+import { customerGroupRouter } from "./customerGroup";
+import { createRouter } from "../createRouter";
 import { authRouter } from "./auth";
+import { portRouter } from "./port";
+import { orgRouter } from "./org";
+import { customerRouter } from "./customer";
 
 /**
  * Create your application's root router
@@ -17,6 +25,14 @@ export const appRouter = createRouter()
     },
   })
   .merge("auth.", authRouter)
-  .merge("org.", orgRouter);
+  .merge("customer.", customerRouter)
+  .merge("customerGroup.", customerGroupRouter)
+  .merge("org.", orgRouter)
+  .merge("port.", portRouter)
+  .merge("supplier.", supplierRouter)
+  .merge("user.", userRouter)
+  .merge("truck.", truckRouter)
+  .merge("vessel.", vesselRouter)
+  .merge("warehouse.", warehouseRouter);
 
 export type AppRouter = typeof appRouter;

@@ -78,6 +78,7 @@ model Org {
   SKTDItem                 SKTDItem[]
   SKTDUsage                SKTDUsage[]
   SupplierCategory         SupplierCategory[]
+  ProductGrade             ProductGrade[]
 }
 
 model User {
@@ -86,7 +87,7 @@ model User {
   username  String    @unique @db.VarChar(20)
   email     String    @unique @db.VarChar(40)
   password  String
-  roleId    Int
+  roleId    String
   role      Role      @relation(fields: [roleId], references: [roleId])
   createdBy String
   updatedBy String
@@ -107,7 +108,7 @@ model UserOrg {
 }
 
 model Role {
-  roleId     Int       @id @default(autoincrement())
+  roleId     String    @id @db.VarChar(20)
   name       String    @db.VarChar(40)
   permission String?
   org        Org       @relation(fields: [orgCode], references: [orgCode])
@@ -129,8 +130,8 @@ model CustomerGroup {
   customerGroupCode String     @db.VarChar(20)
   name              String     @db.VarChar(40)
   phone             String     @db.VarChar(20)
-  address           String
-  type              String
+  address           String?
+  type              String?
   orgCode           String     @db.VarChar(20)
   org               Org        @relation(fields: [orgCode], references: [orgCode])
   createdBy         String     @db.VarChar(20)
@@ -146,12 +147,12 @@ model CustomerGroup {
 model Customer {
   customerCode      String          @db.VarChar(20)
   name              String          @db.VarChar(20)
-  address           String
-  type              String
+  address           String?
+  type              String?
   customerGroup     CustomerGroup?  @relation(fields: [customerGroupCode, orgCode], references: [customerGroupCode, orgCode])
-  customerGroupCode String
-  NPWP              String          @db.VarChar(40)
-  NPWPAddrees       String          @db.VarChar(255)
+  customerGroupCode String?
+  NPWP              String?         @db.VarChar(40)
+  NPWPAddress       String?         @db.VarChar(255)
   orgCode           String
   org               Org             @relation(fields: [orgCode], references: [orgCode])
   createdBy         String          @db.VarChar(20)
@@ -183,11 +184,11 @@ model CustomerContact {
 model Vessel {
   vesselCode   String          @db.VarChar(20)
   regNo        String          @db.VarChar(40)
-  vesselType   String          @db.VarChar(40)
-  imoNumber    String          @db.VarChar(40)
-  teus         String          @db.VarChar(40)
-  name         String          @db.VarChar(40)
-  customer     Customer?       @relation(fields: [customerCode, orgCode], references: [customerCode, orgCode])
+  vesselType   String?         @db.VarChar(40)
+  imoNumber    String?         @db.VarChar(40)
+  teus         String?         @db.VarChar(40)
+  name         String?         @db.VarChar(40)
+  customer     Customer        @relation(fields: [customerCode, orgCode], references: [customerCode, orgCode])
   customerCode String          @db.VarChar(20)
   orgCode      String          @db.VarChar(20)
   org          Org             @relation(fields: [orgCode], references: [orgCode])
@@ -235,8 +236,8 @@ model Truck {
 model Warehouse {
   warehouseCode             String          @db.VarChar(20)
   name                      String          @db.VarChar(40)
-  phone                     String          @db.VarChar(20)
-  address                   String
+  phone                     String?         @db.VarChar(20)
+  address                   String?
   areaCode                  String          @db.VarChar(20)
   area                      Area            @relation(fields: [areaCode, orgCode], references: [areaCode, orgCode])
   orgCode                   String          @db.VarChar(20)
@@ -261,6 +262,11 @@ model Area {
   areaName   String      @db.VarChar(40)
   orgCode    String      @db.VarChar(20)
   org        Org         @relation(fields: [orgCode], references: [orgCode])
+  createdBy  String      @db.VarChar(20)
+  updatedBy  String      @db.VarChar(20)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
   Warehouses Warehouse[]
 
   @@id([areaCode, orgCode])
@@ -269,7 +275,7 @@ model Area {
 model Port {
   portCode      String          @db.VarChar(20)
   name          String          @db.VarChar(40)
-  address       String
+  address       String?
   area          String
   orgCode       String          @db.VarChar(20)
   org           Org             @relation(fields: [orgCode], references: [orgCode])
@@ -290,9 +296,9 @@ model Port {
 model Supplier {
   supplierCode         String           @db.VarChar(20)
   name                 String           @db.VarChar(40)
-  phone                String           @db.VarChar(20)
-  address              String
-  type                 String
+  phone                String?          @db.VarChar(20)
+  address              String?
+  type                 String?
   top                  Int
   supplierCategoryCode String           @db.VarChar(20)
   supplierCategory     SupplierCategory @relation(fields: [supplierCategoryCode, orgCode], references: [supplierCategoryCode, orgCode])
@@ -368,7 +374,13 @@ model ProductGrade {
   gradeCode String    @db.VarChar(10)
   gradeName String    @db.VarChar(40)
   orgCode   String    @db.VarChar(20)
+  org       Org       @relation(fields: [orgCode], references: [orgCode])
   Product   Product[]
+  createdBy String    @db.VarChar(20)
+  updatedBy String    @db.VarChar(20)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@id([gradeCode, orgCode])
 }
