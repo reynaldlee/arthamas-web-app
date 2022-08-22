@@ -2,22 +2,16 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
-export const warehouseSchema = z.object({
-  warehouseCode: z.string().max(20),
-  name: z.string().max(40),
-  phone: z.string().max(20).optional(),
-  address: z.string().optional(),
-  areaCode: z.string().max(20),
+export const unitSchema = z.object({
+  unitCode: z.string().max(20),
+  volumes: z.number(),
 });
 
-export const warehouseRouter = createProtectedRouter()
+export const unitRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async ({ ctx }) => {
-      const data = await prisma.warehouse.findMany({
+      const data = await prisma.unit.findMany({
         where: { orgCode: ctx.user.orgCode },
-        include: {
-          area: { select: { areaCode: true, areaName: true } },
-        },
       });
       return { data };
     },
@@ -25,14 +19,11 @@ export const warehouseRouter = createProtectedRouter()
   .query("find", {
     input: z.string(),
     resolve: async ({ ctx, input }) => {
-      const data = await prisma.warehouse.findUnique({
-        include: {
-          area: { select: { areaCode: true, areaName: true } },
-        },
+      const data = await prisma.unit.findUnique({
         where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input,
+          unitCode_orgCode: {
             orgCode: ctx.user.orgCode,
+            unitCode: input,
           },
         },
       });
@@ -40,9 +31,9 @@ export const warehouseRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: warehouseSchema,
+    input: unitSchema,
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.warehouse.create({
+      const data = await prisma.unit.create({
         data: {
           ...input,
           orgCode: ctx.user.orgCode,
@@ -55,20 +46,19 @@ export const warehouseRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: warehouseSchema.omit({ warehouseCode: true }).partial().extend({
-      warehouseCode: warehouseSchema.shape.warehouseCode,
+    input: unitSchema.omit({ unitCode: true }).partial().extend({
+      unitCode: unitSchema.shape.unitCode,
     }),
     resolve: async ({ input, ctx }) => {
-      const { warehouseCode, ...updatedFields } = input;
-
-      const data = await prisma.warehouse.update({
+      const { unitCode, ...updatedFields } = input;
+      const data = await prisma.unit.update({
         data: {
           ...updatedFields,
-          updatedBy: ctx.user.username,
+          updatedBy: ctx.user!.username,
         },
         where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input.warehouseCode,
+          unitCode_orgCode: {
+            unitCode,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -80,10 +70,10 @@ export const warehouseRouter = createProtectedRouter()
   .mutation("delete", {
     input: z.string(),
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.warehouse.delete({
+      const data = await prisma.unit.delete({
         where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input,
+          unitCode_orgCode: {
+            unitCode: input,
             orgCode: ctx.user.orgCode,
           },
         },

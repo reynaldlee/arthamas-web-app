@@ -43,7 +43,9 @@ export const OrgProvider = ({ children }: Props) => {
   const changeOrg = async (orgCode: string) => {
     changeOrgMutation.mutate(orgCode, {
       onSuccess: (data) => {
-        nookies.setCookie(null, "session", data.accessToken);
+        nookies.setCookie(null, "session", data.accessToken, {
+          path: "/",
+        });
         window.location.reload();
       },
     });

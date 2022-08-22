@@ -44,6 +44,7 @@ async function main() {
         updatedBy: "system",
         role: {
           create: {
+            roleId: "SADMIN",
             name: "Super Admin",
             org: {
               connect: {

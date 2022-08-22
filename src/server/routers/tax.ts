@@ -2,32 +2,29 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
-export const portSchema = z.object({
-  portCode: z.string().max(20),
+export const taxSchema = z.object({
+  taxCode: z.string().max(10),
   name: z.string().max(40),
-  address: z.string().nullable(),
-  area: z.string().max(20),
-  lat: z.number().nullable().optional(),
-  lng: z.number().nullable().optional(),
+  taxRate: z.number().min(0).max(1),
 });
 
-export const portRouter = createProtectedRouter()
+export const unitRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async ({ ctx }) => {
-      const data = await prisma.port.findMany({
+      const data = await prisma.tax.findMany({
         where: { orgCode: ctx.user.orgCode },
       });
       return { data };
     },
   })
   .query("find", {
-    input: z.string(),
+    input: taxSchema.shape.taxCode,
     resolve: async ({ ctx, input }) => {
-      const data = await prisma.port.findUnique({
+      const data = await prisma.tax.findUnique({
         where: {
-          portCode_orgCode: {
+          taxCode_orgCode: {
+            taxCode: input,
             orgCode: ctx.user.orgCode,
-            portCode: input,
           },
         },
       });
@@ -35,9 +32,9 @@ export const portRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: portSchema,
+    input: taxSchema,
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.port.create({
+      const data = await prisma.tax.create({
         data: {
           ...input,
           orgCode: ctx.user.orgCode,
@@ -50,19 +47,17 @@ export const portRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: portSchema.omit({ portCode: true }).partial().extend({
-      portCode: portSchema.shape.portCode,
-    }),
+    input: taxSchema,
     resolve: async ({ input, ctx }) => {
-      const { portCode, ...updatedFields } = input;
-      const data = await prisma.port.update({
+      const { taxCode, ...updatedFields } = input;
+      const data = await prisma.tax.update({
         data: {
           ...updatedFields,
           updatedBy: ctx.user!.username,
         },
         where: {
-          portCode_orgCode: {
-            portCode,
+          taxCode_orgCode: {
+            taxCode: input.taxCode,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -72,12 +67,12 @@ export const portRouter = createProtectedRouter()
     },
   })
   .mutation("delete", {
-    input: z.string(),
+    input: taxSchema.shape.taxCode,
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.port.delete({
+      const data = await prisma.tax.delete({
         where: {
-          portCode_orgCode: {
-            portCode: input,
+          taxCode_orgCode: {
+            taxCode: input,
             orgCode: ctx.user.orgCode,
           },
         },

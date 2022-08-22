@@ -2,22 +2,16 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
-export const warehouseSchema = z.object({
-  warehouseCode: z.string().max(20),
+export const productCategorySchema = z.object({
+  productCategoryCode: z.string().max(20),
   name: z.string().max(40),
-  phone: z.string().max(20).optional(),
-  address: z.string().optional(),
-  areaCode: z.string().max(20),
 });
 
-export const warehouseRouter = createProtectedRouter()
+export const productCategoryRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async ({ ctx }) => {
-      const data = await prisma.warehouse.findMany({
+      const data = await prisma.productCategory.findMany({
         where: { orgCode: ctx.user.orgCode },
-        include: {
-          area: { select: { areaCode: true, areaName: true } },
-        },
       });
       return { data };
     },
@@ -25,13 +19,10 @@ export const warehouseRouter = createProtectedRouter()
   .query("find", {
     input: z.string(),
     resolve: async ({ ctx, input }) => {
-      const data = await prisma.warehouse.findUnique({
-        include: {
-          area: { select: { areaCode: true, areaName: true } },
-        },
+      const data = await prisma.productCategory.findUnique({
         where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input,
+          productCategoryCode_orgCode: {
+            productCategoryCode: input,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -40,9 +31,9 @@ export const warehouseRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: warehouseSchema,
+    input: productCategorySchema,
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.warehouse.create({
+      const data = await prisma.productCategory.create({
         data: {
           ...input,
           orgCode: ctx.user.orgCode,
@@ -55,20 +46,22 @@ export const warehouseRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: warehouseSchema.omit({ warehouseCode: true }).partial().extend({
-      warehouseCode: warehouseSchema.shape.warehouseCode,
-    }),
+    input: productCategorySchema
+      .omit({ productCategoryCode: true })
+      .partial()
+      .extend({
+        productCategoryCode: productCategorySchema.shape.productCategoryCode,
+      }),
     resolve: async ({ input, ctx }) => {
-      const { warehouseCode, ...updatedFields } = input;
-
-      const data = await prisma.warehouse.update({
+      const { productCategoryCode, ...updatedFields } = input;
+      const data = await prisma.productCategory.update({
         data: {
           ...updatedFields,
           updatedBy: ctx.user.username,
         },
         where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input.warehouseCode,
+          productCategoryCode_orgCode: {
+            productCategoryCode: input.productCategoryCode,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -80,10 +73,10 @@ export const warehouseRouter = createProtectedRouter()
   .mutation("delete", {
     input: z.string(),
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.warehouse.delete({
+      const data = await prisma.productCategory.delete({
         where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input,
+          productCategoryCode_orgCode: {
+            productCategoryCode: input,
             orgCode: ctx.user.orgCode,
           },
         },

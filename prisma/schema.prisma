@@ -145,26 +145,28 @@ model CustomerGroup {
 }
 
 model Customer {
-  customerCode      String          @db.VarChar(20)
-  name              String          @db.VarChar(20)
-  address           String?
-  type              String?
-  customerGroup     CustomerGroup?  @relation(fields: [customerGroupCode, orgCode], references: [customerGroupCode, orgCode])
-  customerGroupCode String?
-  NPWP              String?         @db.VarChar(40)
-  NPWPAddress       String?         @db.VarChar(255)
-  orgCode           String
-  org               Org             @relation(fields: [orgCode], references: [orgCode])
-  createdBy         String          @db.VarChar(20)
-  updatedBy         String          @db.VarChar(20)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  deletedAt         DateTime?
-  vessel            Vessel[]
-  salesQuotes       SalesQuote[]
-  salesOrders       SalesOrder[]
-  productPrices     ProductPrices[]
-  SKTD              SKTD[]
+  customerCode         String          @db.VarChar(20)
+  name                 String          @db.VarChar(20)
+  address              String?
+  type                 String?
+  customerGroup        CustomerGroup?  @relation(fields: [customerGroupCode, orgCode], references: [customerGroupCode, orgCode])
+  customerGroupCode    String?
+  customerContactEmail String?
+  NPWP                 String?         @db.VarChar(40)
+  NPWPAddress          String?         @db.VarChar(255)
+  top                  Int
+  orgCode              String
+  org                  Org             @relation(fields: [orgCode], references: [orgCode])
+  createdBy            String          @db.VarChar(20)
+  updatedBy            String          @db.VarChar(20)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  deletedAt            DateTime?
+  vessel               Vessel[]
+  salesQuotes          SalesQuote[]
+  salesOrders          SalesOrder[]
+  productPrices        ProductPrices[]
+  SKTD                 SKTD[]
 
   CustomerContact CustomerContact[]
 
@@ -174,6 +176,7 @@ model Customer {
 model CustomerContact {
   contactName  String   @db.VarChar(20)
   phone        String   @db.VarChar(20)
+  jobTitle     String   @db.VarChar(40)
   customer     Customer @relation(fields: [customerCode, orgCode], references: [customerCode, orgCode])
   customerCode String   @db.VarChar(20)
   orgCode      String
@@ -219,7 +222,7 @@ model Truck {
   truckCode       String          @db.VarChar(20)
   policeNumber    String          @db.VarChar(10)
   name            String          @db.VarChar(40)
-  type            String          @db.VarChar(40)
+  type            String?         @db.VarChar(40)
   orgCode         String          @db.VarChar(20)
   org             Org             @relation(fields: [orgCode], references: [orgCode])
   createdBy       String          @db.VarChar(40)
@@ -347,11 +350,11 @@ model File {
 model Product {
   productCode         String          @db.VarChar(20)
   name                String          @db.VarChar(40)
-  desc                String          @db.Text
-  sku                 String          @db.VarChar(20)
-  nptNumber           String          @db.VarChar(40)
-  nptValidFrom        DateTime        @db.Date
-  nptValidTo          DateTime        @db.Date
+  desc                String?         @db.Text
+  sku                 String?         @db.VarChar(20)
+  nptNumber           String?         @db.VarChar(40)
+  nptValidFrom        DateTime?       @db.Date
+  nptValidTo          DateTime?       @db.Date
   grade               ProductGrade    @relation(fields: [gradeCode, orgCode], references: [gradeCode, orgCode])
   gradeCode           String          @db.VarChar(10)
   productCategoryCode String          @db.VarChar(20)
@@ -392,8 +395,7 @@ model ProductUnit {
   org                   Org                     @relation(fields: [orgCode], references: [orgCode])
   product               Product                 @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   unit                  Unit                    @relation(fields: [unitCode, orgCode], references: [unitCode, orgCode])
-  unitVolume            Float
-  unitPrice             Float
+  price                 Float?
   createdBy             String                  @db.VarChar(20)
   updatedBy             String                  @db.VarChar(20)
   createdAt             DateTime                @default(now())
@@ -415,6 +417,7 @@ model ProductUnit {
 model Unit {
   unitCode     String        @db.VarChar(10)
   productUnits ProductUnit[]
+  volumes      Float
   orgCode      String        @db.VarChar(20)
   org          Org           @relation(fields: [orgCode], references: [orgCode])
   createdBy    String        @db.VarChar(20)
@@ -446,28 +449,28 @@ model Service {
 }
 
 model BankAccount {
-  accountNumber String    @db.VarChar(20)
-  accountName   String    @db.VarChar(40)
-  bankName      String    @db.VarChar(40)
-  currency      Currency  @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
-  currencyCode  String    @db.VarChar(20)
-  orgCode       String    @db.VarChar(20)
-  org           Org       @relation(fields: [orgCode], references: [orgCode])
-  createdBy     String    @db.VarChar(20)
-  updatedBy     String    @db.VarChar(20)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
+  bankAccountCode   String    @db.VarChar(20)
+  bankAccountNumber String    @db.VarChar(20)
+  bankAccountName   String    @db.VarChar(40)
+  bankName          String    @db.VarChar(40)
+  currency          Currency  @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
+  currencyCode      String    @db.VarChar(3)
+  orgCode           String    @db.VarChar(20)
+  org               Org       @relation(fields: [orgCode], references: [orgCode])
+  createdBy         String    @db.VarChar(20)
+  updatedBy         String    @db.VarChar(20)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
 
-  @@id([accountNumber, orgCode])
+  @@id([bankAccountCode, orgCode])
 }
 
 model ProductPrices {
   productCode  String    @db.VarChar(20)
   unitCode     String    @db.VarChar(10)
-  // productUnit  ProductUnit @relation(fields: [productCode, unitCode, orgCode], references: [productCode, unitCode, orgCode])
   portCode     String    @db.VarChar(10)
-  port         Port      @relation(fields: [portPortCode, portOrgCode], references: [portCode, orgCode])
+  port         Port      @relation(fields: [portCode, orgCode], references: [portCode, orgCode])
   customerCode String    @db.VarChar(20)
   customer     Customer  @relation(fields: [customerCode, orgCode], references: [customerCode, orgCode])
   price        Float
@@ -481,12 +484,7 @@ model ProductPrices {
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
-  productUnit  ProductUnit @relation(fields: [productCode, unitCode, orgCode], references: [productCode, unitCode, orgCode])
-  // productUnitUnitCode    String      @db.VarChar(10)
-  // productUnitProductCode String      @db.VarChar(20)
-  // productUnitOrgCode     String      @db.VarChar(20)
-  portPortCode String      @db.VarChar(20)
-  portOrgCode  String      @db.VarChar(20)
+  productUnit ProductUnit @relation(fields: [productCode, unitCode, orgCode], references: [productCode, unitCode, orgCode])
 
   @@id([productCode, unitCode, orgCode, portCode, customerCode])
 }
@@ -707,7 +705,7 @@ model SalesOrderItem {
   unitCode               String                  @db.VarChar(10)
   productUnit            ProductUnit             @relation(fields: [productCode, unitCode, orgCode], references: [productCode, unitCode, orgCode])
   qty                    Float
-  unitPrice              Float
+  price                  Float
   unitVolume             Float
   totalVolume            Float
   amount                 Float
@@ -878,7 +876,7 @@ model SalesReturnItem {
   docNo                 String         @db.VarChar(40)
   lineNo                Int
   qty                   Float
-  unitPrice             Float
+  price                 Float
   amount                Float
   notes                 String         @db.Text
   salesReturn           SalesReturn    @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
@@ -925,7 +923,7 @@ model PurchaseOrderItem {
   unitCode            String                @db.VarChar(10)
   productUnit         ProductUnit           @relation(fields: [productCode, unitCode, orgCode], references: [productCode, unitCode, orgCode])
   qty                 Float
-  unitPrice           Float
+  price               Float
   unitName            String                @db.VarChar(20)
   unitVolume          Float
   totalVolume         Float
@@ -964,7 +962,7 @@ model PurchaseReturnItem {
   purchaseReturn    PurchaseReturn    @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
   purchaseOrderItem PurchaseOrderItem @relation(fields: [purchaseOrderItemDocNo, purchaseOrderItemProductCode, purchaseOrderItemUnitCode, purchaseOrderItemOrgCode], references: [docNo, productCode, unitCode, orgCode])
   qty               Float
-  unitPrice         Float
+  price             Float
   orgCode           String            @db.VarChar(20)
   org               Org               @relation(fields: [orgCode], references: [orgCode])
 
@@ -1098,7 +1096,7 @@ model PurchaseInvoiceItem {
   unitCode           String            @db.VarChar(10)
   purchaseOrderItem  PurchaseOrderItem @relation(fields: [purchaseOrderDocNo, productCode, unitCode, orgCode], references: [docNo, productCode, unitCode, orgCode])
   qty                Float
-  unitPrice          Float
+  price              Float
   amount             Float
   org                Org               @relation(fields: [orgCode], references: [orgCode])
   orgCode            String            @db.VarChar(20)

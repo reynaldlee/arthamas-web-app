@@ -1,3 +1,6 @@
+import { areaRouter } from "./area";
+import { unitRouter } from "./unit";
+import { productRouter } from "./product";
 import superjson from "superjson";
 import { supplierRouter } from "./supplier";
 import { warehouseRouter } from "./warehouse";
@@ -25,11 +28,14 @@ export const appRouter = createRouter()
     },
   })
   .merge("auth.", authRouter)
+  .merge("area.", areaRouter)
   .merge("customer.", customerRouter)
   .merge("customerGroup.", customerGroupRouter)
   .merge("org.", orgRouter)
   .merge("port.", portRouter)
+  .merge("product.", productRouter)
   .merge("supplier.", supplierRouter)
+  .merge("unit.", unitRouter)
   .merge("user.", userRouter)
   .merge("truck.", truckRouter)
   .merge("vessel.", vesselRouter)

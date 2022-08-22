@@ -10,11 +10,11 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 
-export default function CustomerIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["customerGroup.findAll"]);
+export default function AreaIndex() {
+  const { data, refetch, isLoading } = trpc.useQuery(["area.findAll"]);
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["customerGroup.delete"]);
+  const { mutate: deleteData } = trpc.useMutation(["area.delete"]);
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {
@@ -27,25 +27,22 @@ export default function CustomerIndex() {
   return (
     <MainLayout>
       <Box p={2}>
-        <Link href="/management/customer-groups/create">
+        <Link href="/management/areas/create">
           <Button variant="contained" startIcon={<Add />}>
-            Create New Customer
+            Create New Port
           </Button>
         </Link>
       </Box>
 
       <MUIDataTable
-        title="Customer Groups"
+        title="Areas"
         options={{
           tableId: tableId,
           selectableRowsHideCheckboxes: true,
         }}
         columns={[
-          { label: "Customer Group Code", name: "customerGroupCode" },
-          { label: "Customer Group Name", name: "name" },
-          { label: "Address", name: "address", options: { filter: false } },
-          { label: "Customer Group", name: "customerGroup" },
-          { label: "Contact Email", name: "customerContactEmail" },
+          { label: "Area Code", name: "areaCode" },
+          { label: "Area Name", name: "areaName" },
           {
             name: "",
             label: "Action",

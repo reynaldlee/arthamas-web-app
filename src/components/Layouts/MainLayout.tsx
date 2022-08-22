@@ -36,7 +36,7 @@ interface Props {
 export default function MainLayout(props: Props) {
   const { window } = props;
   const router = useRouter();
-  const { orgCode, changeOrg } = useOrganization();
+  const { orgCode = "", changeOrg } = useOrganization();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [expandedMenu, setExpandedMenu] = React.useState<NavMenuItem[]>([]);
@@ -71,7 +71,12 @@ export default function MainLayout(props: Props) {
       <Divider />
 
       <Box sx={{ px: 2 }}>
-        <Select value={orgCode} fullWidth onChange={handleChangeOrg}>
+        <Select
+          defaultValue=""
+          value={orgCode}
+          fullWidth
+          onChange={handleChangeOrg}
+        >
           {orgData?.data.map((org) => (
             <MenuItem key={org.orgCode} value={org.orgCode}>
               {org.org.name}
@@ -89,8 +94,8 @@ export default function MainLayout(props: Props) {
               </Typography>
 
               {menuItem.items.map((item) => (
-                <>
-                  <Link href={item.link || "#"} key={item.name}>
+                <React.Fragment key={item.name}>
+                  <Link href={item.link || "#"}>
                     <ListItem
                       disablePadding
                       selected={router.pathname.includes(item.link!)}
@@ -126,7 +131,7 @@ export default function MainLayout(props: Props) {
                       })}
                     </Collapse>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </List>
             <Divider />

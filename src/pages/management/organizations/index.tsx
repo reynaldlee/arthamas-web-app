@@ -4,8 +4,8 @@ import { trpc } from "@/utils/trpc";
 import { Box, Button, IconButton, Paper } from "@mui/material";
 
 import EditIcon from "@mui/icons-material/Edit";
-import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+
 import Link from "next/link";
 import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";

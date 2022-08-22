@@ -87,6 +87,11 @@ const menuItems = [
         link: "/management/organizations",
       },
       {
+        name: "Area",
+        icon: BusinessCenterTwoToneIcon,
+        link: "/management/areas",
+      },
+      {
         name: "Warehouses",
         icon: BusinessCenterTwoToneIcon,
         link: "/management/warehouses",

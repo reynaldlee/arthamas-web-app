@@ -2,8 +2,8 @@ import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 
 import { useRouter } from "next/router";
-import PortForm, { PortFormValues } from "@/components/Forms/PortForm";
-import type { PortFormSubmitHandler } from "@/components/Forms/PortForm";
+import AreaForm, { AreaFormValues } from "@/components/Forms/AreaForm";
+import type { AreaFormSubmitHandler } from "@/components/Forms/AreaForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 export default function PortCreatePage() {
@@ -13,13 +13,13 @@ export default function PortCreatePage() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["port.create"], {
+  } = trpc.useMutation(["area.create"], {
     onSuccess: () => {
-      router.push("/management/ports");
+      router.push("/management/areas");
     },
   });
 
-  const onSave: PortFormSubmitHandler<PortFormValues> = (data) => {
+  const onSave: AreaFormSubmitHandler<AreaFormValues> = (data) => {
     submit(data);
   };
 
@@ -29,7 +29,7 @@ export default function PortCreatePage() {
         Create New Port
       </Typography>
 
-      <PortForm onSubmit={onSave}></PortForm>
+      <AreaForm onSubmit={onSave}></AreaForm>
       <FormHelperText error={isError}>{error?.message}</FormHelperText>
     </MainLayout>
   );

@@ -16,22 +16,30 @@ export async function createContext({
   async function getUserFromHeader() {
     if (req.headers.authorization) {
       // get token from authoriztion header
-      const user = jwt.verify(
-        req.headers.authorization.split(" ")[1],
-        process.env.JWT_SECRET!
-      ) as JwtPayload;
-      return user;
+      try {
+        const user = jwt.verify(
+          req.headers.authorization.split(" ")[1],
+          process.env.JWT_SECRET!
+        ) as JwtPayload;
+        return user;
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     const cookies = nookies.get({ req });
 
     if (cookies.session) {
+      try {
+        const user = jwt.verify(
+          cookies.session,
+          process.env.JWT_SECRET!
+        ) as JwtPayload;
+        return user;
+      } catch (error: any) {
+        return null;
+      }
       // get token from session cookies
-      const user = jwt.verify(
-        cookies.session,
-        process.env.JWT_SECRET!
-      ) as JwtPayload;
-      return user;
     }
 
     return null;

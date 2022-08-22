@@ -1,13 +1,14 @@
 import { Box, Button, Input, TextField, Typography } from "@mui/material";
 
 import { SubmitHandler, useForm } from "react-hook-form";
-import { FormContainer, TextFieldElement } from "react-hook-form-mui";
 
 export type PortFormValues = {
   portCode: string;
   name: string;
-  address: string;
+  address: string | null;
   area: string;
+  lat: number | null;
+  lng: number | null;
 };
 export type PortFormSubmitHandler<T> = SubmitHandler<T>;
 
@@ -17,7 +18,7 @@ type PortFormProps = {
   isEdit?: boolean;
 };
 
-export default function OrganizationForm({
+export default function PortForm({
   onSubmit,
   isEdit,
   defaultValues,
@@ -40,7 +41,7 @@ export default function OrganizationForm({
       );
 
       return onSubmit({
-        orgCode: data.orgCode,
+        portCode: data.portCode,
         ...(dirtyValues as any),
       });
     }
@@ -52,8 +53,8 @@ export default function OrganizationForm({
     <form onSubmit={handleSubmit(submit)}>
       <Box display="flex" flexDirection="column" gap={2}>
         <TextField
-          label="Organization Code"
-          {...register("orgCode")}
+          label="Port Code"
+          {...register("portCode")}
           required
           disabled={isEdit}
         ></TextField>
@@ -64,7 +65,28 @@ export default function OrganizationForm({
           multiline
           rows={4}
         ></TextField>
-        <TextField label="Alias" {...register("code")} required></TextField>
+        <TextField label="Area" {...register("area")}></TextField>
+
+        <TextField
+          type="number"
+          inputProps={{
+            step: 0.000001,
+          }}
+          label="Latitude"
+          {...register("lat", {
+            valueAsNumber: true,
+          })}
+        ></TextField>
+        <TextField
+          type="number"
+          label="Longitude"
+          inputProps={{
+            step: 0.000001,
+          }}
+          {...register("lng", {
+            valueAsNumber: true,
+          })}
+        ></TextField>
       </Box>
       <Button
         type="submit"
