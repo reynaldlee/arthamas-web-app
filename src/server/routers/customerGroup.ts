@@ -5,9 +5,9 @@ import { createProtectedRouter } from "../createRouter";
 export const customerGroupSchema = z.object({
   customerGroupCode: z.string().max(20),
   name: z.string().max(40),
-  phone: z.string().max(20),
-  address: z.string().optional(),
-  type: z.string().optional(),
+  phone: z.string().max(20).optional().nullable(),
+  address: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
 });
 
 export const customerGroupRouter = createProtectedRouter()
@@ -49,7 +49,12 @@ export const customerGroupRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: customerGroupSchema.partial({}),
+    input: customerGroupSchema
+      .omit({ customerGroupCode: true })
+      .partial()
+      .extend({
+        customerGroupCode: customerGroupSchema.shape.customerGroupCode,
+      }),
     resolve: async ({ input, ctx }) => {
       const { customerGroupCode, ...updatedFields } = input;
       const data = await prisma.customerGroup.update({

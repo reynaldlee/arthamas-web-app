@@ -1,16 +1,18 @@
-import { customerGroupSchema } from "./customerGroup";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
+import { customerGroupSchema } from "./customerGroup";
 
 export const customerSchema = z.object({
   customerCode: z.string().max(20),
   name: z.string().max(40),
-  address: z.string().optional(),
-  type: z.string().optional(),
-  NPWP: z.string().optional(),
-  NPWPAddress: z.string().optional(),
-  customerGroupCode: customerGroupSchema.shape.customerGroupCode,
+  address: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
+  NPWP: z.string().optional().nullable(),
+  NPWPAddress: z.string().optional().nullable(),
+  top: z.number(),
+  contactEmail: z.string().email().optional().nullable(),
+  customerGroupCode: z.string().optional().nullable(),
 });
 
 export const customerRouter = createProtectedRouter()
@@ -38,11 +40,25 @@ export const customerRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: customerSchema,
+    input: customerSchema.passthrough().extend({
+      customerGroup: customerGroupSchema
+        .pick({
+          customerGroupCode: true,
+          name: true,
+        })
+        .nullable()
+        .optional(),
+    }),
     resolve: async ({ input, ctx }) => {
       const data = await prisma.customer.create({
         data: {
-          ...input,
+          customerCode: input.customerCode,
+          name: input.name,
+          address: input.address,
+          top: input.top,
+          NPWP: input.NPWP,
+          NPWPAddress: input.NPWPAddress,
+          customerGroupCode: input.customerGroup?.customerGroupCode,
           orgCode: ctx.user.orgCode,
           createdBy: ctx.user.username,
           updatedBy: ctx.user.username,
@@ -53,9 +69,16 @@ export const customerRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: customerSchema.partial({}),
+    input: customerSchema
+      .omit({
+        customerCode: true,
+      })
+      .partial()
+      .extend({
+        customerCode: customerSchema.shape.customerCode,
+      }),
     resolve: async ({ input, ctx }) => {
-      const { customerGroupCode, ...updatedFields } = input;
+      const { customerCode, ...updatedFields } = input;
       const data = await prisma.customer.update({
         data: {
           ...updatedFields,

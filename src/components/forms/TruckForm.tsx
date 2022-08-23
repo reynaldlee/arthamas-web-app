@@ -1,43 +1,42 @@
 import { Box, Button, Input, TextField, Typography } from "@mui/material";
 
 import { SubmitHandler, useForm } from "react-hook-form";
+import { truckSchema } from "src/server/routers/truck";
+import { z } from "zod";
 
-export type AreaFormValues = {
-  areaCode: string;
-  areaName: string;
-};
-export type AreaFormSubmitHandler<T> = SubmitHandler<T>;
+export type TruckFormValues = z.infer<typeof truckSchema>;
+export type TruckFormSubmitHandler<T> = SubmitHandler<T>;
 
-type AreaFormProps = {
-  onSubmit: AreaFormSubmitHandler<AreaFormValues>;
-  defaultValues?: Partial<AreaFormValues>;
+type TruckFormProps = {
+  onSubmit: TruckFormSubmitHandler<TruckFormValues>;
+  defaultValues?: Partial<TruckFormValues>;
   isEdit?: boolean;
 };
 
-export default function AreaForm({
+export default function TruckForm({
   onSubmit,
   isEdit,
   defaultValues,
-}: AreaFormProps) {
+}: TruckFormProps) {
   const {
     register,
     handleSubmit,
     formState: { isSubmitting, dirtyFields, isDirty },
-  } = useForm<AreaFormValues>({
+  } = useForm<TruckFormValues>({
     defaultValues: defaultValues,
   });
 
-  const submit: AreaFormSubmitHandler<AreaFormValues> = (data) => {
+  const submit: TruckFormSubmitHandler<TruckFormValues> = (data) => {
     if (isEdit) {
       const dirtyValues = Object.fromEntries(
         Object.keys(dirtyFields).map((key) => [
           key,
-          data[key as keyof AreaFormValues],
+          data[key as keyof TruckFormValues],
         ])
       );
 
       return onSubmit({
-        areaCode: data.areaCode,
+        truckCode: data.truckCode,
         ...(dirtyValues as any),
       });
     }
@@ -49,12 +48,18 @@ export default function AreaForm({
     <form onSubmit={handleSubmit(submit)}>
       <Box display="flex" flexDirection="column" gap={2}>
         <TextField
-          label="Area Code"
-          {...register("areaCode")}
+          label="Truck Code"
+          {...register("truckCode")}
           required
           disabled={isEdit}
         ></TextField>
-        <TextField label="Name" {...register("areaName")} required></TextField>
+        <TextField label="Name" {...register("name")} required></TextField>
+        <TextField
+          label="Nopol"
+          {...register("policeNumber")}
+          required
+        ></TextField>
+        <TextField label="Tipe Truck" {...register("type")}></TextField>
       </Box>
       <Button
         type="submit"

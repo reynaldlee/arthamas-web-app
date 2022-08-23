@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import CustomerForm, {
   CustomerFormValues,
 } from "@/components/Forms/CustomerForm";
-import type { CustomerFormSubmitHandler } from "@/components/Forms/PortForm";
+import type { CustomerFormSubmitHandler } from "@/components/Forms/CustomerForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 export default function CustomerCreatePage() {
@@ -28,7 +28,7 @@ export default function CustomerCreatePage() {
   return (
     <MainLayout>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Create New Port
+        Create New Customer
       </Typography>
 
       <CustomerForm onSubmit={onSave}></CustomerForm>

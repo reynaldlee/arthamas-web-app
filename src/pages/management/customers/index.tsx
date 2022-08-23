@@ -44,8 +44,7 @@ export default function CustomerIndex() {
           { label: "Customer Code", name: "customerCode" },
           { label: "Name", name: "name" },
           { label: "Address", name: "address", options: { filter: false } },
-          { label: "Customer Group", name: "customerGroup" },
-          { label: "Contact Email", name: "customerContactEmail" },
+          { label: "Contact Email", name: "contactEmail" },
           {
             name: "",
             label: "Action",
@@ -55,7 +54,7 @@ export default function CustomerIndex() {
                 const id = data.rowData[0];
                 return (
                   <>
-                    <Link href={`/management/areas/${id}/edit`}>
+                    <Link href={`/management/customers/${id}/edit`}>
                       <IconButton>
                         <EditIcon></EditIcon>
                       </IconButton>

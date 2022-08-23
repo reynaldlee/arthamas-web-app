@@ -26,7 +26,7 @@ export default function PortCreatePage() {
   return (
     <MainLayout>
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Create New Port
+        Create New Area
       </Typography>
 
       <AreaForm onSubmit={onSave}></AreaForm>

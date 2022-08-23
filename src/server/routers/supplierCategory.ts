@@ -2,17 +2,15 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
-export const truckSchema = z.object({
-  truckCode: z.string().max(20),
-  policeNumber: z.string().max(10),
-  name: z.string().max(40),
-  type: z.string().max(40).optional().nullable(),
+export const supplierCategorySchema = z.object({
+  supplierCategoryCode: z.string().max(20),
+  supplierCategoryName: z.string().max(40),
 });
 
-export const truckRouter = createProtectedRouter()
+export const supplierCategoryRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async ({ ctx }) => {
-      const data = await prisma.truck.findMany({
+      const data = await prisma.supplierCategory.findMany({
         where: { orgCode: ctx.user.orgCode },
       });
       return { data };
@@ -21,10 +19,10 @@ export const truckRouter = createProtectedRouter()
   .query("find", {
     input: z.string(),
     resolve: async ({ ctx, input }) => {
-      const data = await prisma.truck.findUnique({
+      const data = await prisma.supplierCategory.findUnique({
         where: {
-          truckCode_orgCode: {
-            truckCode: input,
+          supplierCategoryCode_orgCode: {
+            supplierCategoryCode: input,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -33,9 +31,9 @@ export const truckRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: truckSchema,
+    input: supplierCategorySchema,
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.truck.create({
+      const data = await prisma.supplierCategory.create({
         data: {
           ...input,
           orgCode: ctx.user.orgCode,
@@ -48,19 +46,22 @@ export const truckRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: truckSchema.omit({ truckCode: true }).partial().extend({
-      truckCode: truckSchema.shape.truckCode,
-    }),
+    input: supplierCategorySchema
+      .omit({ supplierCategoryCode: true })
+      .partial()
+      .extend({
+        supplierCategoryCode: supplierCategorySchema.shape.supplierCategoryCode,
+      }),
     resolve: async ({ input, ctx }) => {
-      const { truckCode, ...updatedFields } = input;
-      const data = await prisma.truck.update({
+      const { supplierCategoryCode, ...updatedFields } = input;
+      const data = prisma.supplierCategory.update({
         data: {
           ...updatedFields,
           updatedBy: ctx.user.username,
         },
         where: {
-          truckCode_orgCode: {
-            truckCode: input.truckCode,
+          supplierCategoryCode_orgCode: {
+            supplierCategoryCode: input.supplierCategoryCode,
             orgCode: ctx.user.orgCode,
           },
         },

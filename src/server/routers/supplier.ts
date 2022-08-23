@@ -2,14 +2,17 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
-const supplierSchema = z.object({
+export const supplierSchema = z.object({
   supplierCode: z.string().max(20),
   name: z.string().max(40),
-  phone: z.string().max(20).optional(),
-  address: z.string().optional(),
-  type: z.string().optional(),
+  phone: z.string().max(20).optional().nullable(),
+  address: z.string().optional().nullable(),
+  contactEmail: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
   top: z.number(),
-  supplierCategoryCode: z.string().max(20),
+  NPWP: z.string().optional().nullable(),
+  NPWPAddress: z.string().optional().nullable(),
+  supplierCategoryCode: z.string().max(20).optional().nullable(),
 });
 
 export const supplierRouter = createProtectedRouter()
@@ -42,6 +45,7 @@ export const supplierRouter = createProtectedRouter()
   .mutation("create", {
     input: supplierSchema,
     resolve: async ({ input, ctx }) => {
+      // console.log(input);
       const data = await prisma.supplier.create({
         data: {
           ...input,

@@ -2,11 +2,11 @@ import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 
 import { useRouter } from "next/router";
-import CustomerForm from "@/components/Forms/CustomerForm";
+import SupplierForm from "@/components/Forms/SupplierForm";
 import type {
-  CustomerFormSubmitHandler,
-  CustomerFormValues,
-} from "@/components/Forms/CustomerForm";
+  SupplierFormSubmitHandler,
+  SupplierFormValues,
+} from "@/components/Forms/SupplierForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 type RouterQuery = {
@@ -17,32 +17,32 @@ export default function PortEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["customer.find", id]);
+  const { data } = trpc.useQuery(["supplier.find", id]);
 
-  const updateMutatation = trpc.useMutation(["customer.update"], {
+  const updateMutatation = trpc.useMutation(["supplier.update"], {
     onSuccess: () => {
-      router.push("/management/customers");
+      router.push("/management/suppliers");
     },
   });
 
-  const onSubmit: CustomerFormSubmitHandler<CustomerFormValues> = (data) => {
+  const onSubmit: SupplierFormSubmitHandler<SupplierFormValues> = (data) => {
     updateMutatation.mutate(data);
   };
 
   return (
     <MainLayout>
       <Typography variant="h4" sx={{ mb: 2 }}>
-        Edit Customer
+        Edit Supplier
       </Typography>
 
       {data?.data ? (
-        <CustomerForm
+        <SupplierForm
           onSubmit={onSubmit}
           isEdit
           defaultValues={{
             ...data.data,
           }}
-        ></CustomerForm>
+        ></SupplierForm>
       ) : null}
 
       <FormHelperText error={updateMutatation.isError}>

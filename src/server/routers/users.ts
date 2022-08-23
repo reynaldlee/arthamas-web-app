@@ -1,5 +1,5 @@
 import { prisma } from "@/prisma/index";
-import { string, z } from "zod";
+import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
 const userOrgSchema = z.object({

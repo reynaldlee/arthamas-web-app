@@ -1,3 +1,6 @@
+import { productGradeRouter } from "./productGrade";
+import { productCategoryRouter } from "./productCategory";
+import { profileRouter } from "./profile";
 import { areaRouter } from "./area";
 import { unitRouter } from "./unit";
 import { productRouter } from "./product";
@@ -34,9 +37,12 @@ export const appRouter = createRouter()
   .merge("org.", orgRouter)
   .merge("port.", portRouter)
   .merge("product.", productRouter)
+  .merge("productCategory.", productCategoryRouter)
+  .merge("productGrade.", productGradeRouter)
   .merge("supplier.", supplierRouter)
   .merge("unit.", unitRouter)
   .merge("user.", userRouter)
+  .merge("profile.", profileRouter)
   .merge("truck.", truckRouter)
   .merge("vessel.", vesselRouter)
   .merge("warehouse.", warehouseRouter);

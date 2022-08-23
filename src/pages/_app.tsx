@@ -4,15 +4,14 @@ import { withTRPC } from "@trpc/next";
 import { AppRouter } from "./api/trpc/[trpc]";
 import superjson from "superjson";
 import ThemeProviderWrapper from "src/theme/ThemeProvider";
-import { OrgProvider } from "src/context/OrganizationContext";
-import { TRPCClientError } from "@trpc/client";
+import { AuthProvider } from "src/context/AuthContext";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <ThemeProviderWrapper>
-      <OrgProvider>
+      <AuthProvider>
         <Component {...pageProps} />
-      </OrgProvider>
+      </AuthProvider>
     </ThemeProviderWrapper>
   );
 };

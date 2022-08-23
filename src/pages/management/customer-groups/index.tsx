@@ -29,7 +29,7 @@ export default function CustomerIndex() {
       <Box p={2}>
         <Link href="/management/customer-groups/create">
           <Button variant="contained" startIcon={<Add />}>
-            Create New Customer
+            Create New Customer Group
           </Button>
         </Link>
       </Box>
@@ -43,9 +43,9 @@ export default function CustomerIndex() {
         columns={[
           { label: "Customer Group Code", name: "customerGroupCode" },
           { label: "Customer Group Name", name: "name" },
+          { label: "Phone", name: "phone" },
+          { label: "Type", name: "type" },
           { label: "Address", name: "address", options: { filter: false } },
-          { label: "Customer Group", name: "customerGroup" },
-          { label: "Contact Email", name: "customerContactEmail" },
           {
             name: "",
             label: "Action",
@@ -55,7 +55,7 @@ export default function CustomerIndex() {
                 const id = data.rowData[0];
                 return (
                   <>
-                    <Link href={`/management/areas/${id}/edit`}>
+                    <Link href={`/management/customer-groups/${id}/edit`}>
                       <IconButton>
                         <EditIcon></EditIcon>
                       </IconButton>

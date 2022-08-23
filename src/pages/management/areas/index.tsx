@@ -29,7 +29,7 @@ export default function AreaIndex() {
       <Box p={2}>
         <Link href="/management/areas/create">
           <Button variant="contained" startIcon={<Add />}>
-            Create New Port
+            Create New Area
           </Button>
         </Link>
       </Box>

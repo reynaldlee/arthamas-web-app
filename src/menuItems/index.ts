@@ -111,6 +111,11 @@ const menuItems = [
         icon: StorefrontTwoToneIcon,
         link: "/management/suppliers",
       },
+      // {
+      //   name: "Supplier Categories",
+      //   icon: StorefrontTwoToneIcon,
+      //   link: "/management/supplier-categories",
+      // },
       {
         name: "Vessels",
         icon: TravelExploreTwoToneIcon,

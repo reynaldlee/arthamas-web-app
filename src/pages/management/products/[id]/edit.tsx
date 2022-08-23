@@ -2,11 +2,11 @@ import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 
 import { useRouter } from "next/router";
-import CustomerForm from "@/components/Forms/CustomerForm";
+import ProductForm from "@/components/Forms/ProductForm";
 import type {
-  CustomerFormSubmitHandler,
-  CustomerFormValues,
-} from "@/components/Forms/CustomerForm";
+  ProductFormSubmitHandler,
+  ProductFormValues,
+} from "@/components/Forms/ProductForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 type RouterQuery = {
@@ -25,7 +25,7 @@ export default function PortEditPage() {
     },
   });
 
-  const onSubmit: CustomerFormSubmitHandler<CustomerFormValues> = (data) => {
+  const onSubmit: ProductFormSubmitHandler<ProductFormValues> = (data) => {
     updateMutatation.mutate(data);
   };
 
@@ -36,13 +36,13 @@ export default function PortEditPage() {
       </Typography>
 
       {data?.data ? (
-        <CustomerForm
+        <ProductForm
           onSubmit={onSubmit}
           isEdit
           defaultValues={{
             ...data.data,
           }}
-        ></CustomerForm>
+        ></ProductForm>
       ) : null}
 
       <FormHelperText error={updateMutatation.isError}>

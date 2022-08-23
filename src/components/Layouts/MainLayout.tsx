@@ -1,6 +1,6 @@
 import * as React from "react";
 import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
+
 import CssBaseline from "@mui/material/CssBaseline";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
@@ -16,10 +16,17 @@ import Typography from "@mui/material/Typography";
 import menuItems, { NavMenu, NavMenuItem } from "../../menuItems";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Collapse, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import {
+  Collapse,
+  Menu,
+  MenuItem,
+  Box,
+  Select,
+  SelectChangeEvent,
+} from "@mui/material";
 import { trpc } from "@/utils/trpc";
-import { useOrganization } from "src/context/OrganizationContext";
-import { KeyboardArrowDown } from "@mui/icons-material";
+import { useAuth } from "src/context/AuthContext";
+import { AccountCircle, KeyboardArrowDown } from "@mui/icons-material";
 import { LoaderModal } from "../Loader";
 
 const drawerWidth = 280;
@@ -36,10 +43,27 @@ interface Props {
 export default function MainLayout(props: Props) {
   const { window } = props;
   const router = useRouter();
-  const { orgCode = "", changeOrg } = useOrganization();
+  const { orgCode = "", changeOrg, logout } = useAuth();
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [expandedMenu, setExpandedMenu] = React.useState<NavMenuItem[]>([]);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
+  const handleProfile = () => {
+    router.push("/profile");
+  };
 
   const { data: orgData, isLoading } = trpc.useQuery(["org.me"]);
 
@@ -155,16 +179,56 @@ export default function MainLayout(props: Props) {
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h2" noWrap component="div"></Typography>
+          <Box display="flex" flexDirection="row">
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: "none" } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h2" noWrap component="div"></Typography>
+
+            <div>
+              <IconButton
+                size="large"
+                aria-label="account of current user"
+                aria-controls="menu-appbar"
+                aria-haspopup="true"
+                onClick={handleMenu}
+                color="inherit"
+              >
+                <AccountCircle />
+              </IconButton>
+              <Menu
+                id="menu-appbar"
+                anchorEl={anchorEl}
+                anchorOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+              >
+                <MenuItem onClick={handleProfile}>Profile</MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
+            </div>
+
+            {/* <Box display="flex" flexDirection="row" alignItems="center" gap={2}>
+              <Avatar></Avatar>
+              <Box>
+                <Typography variant="h5">{username}</Typography>
+              </Box>
+            </Box>*/}
+          </Box>
         </Toolbar>
       </AppBar>
       <Box

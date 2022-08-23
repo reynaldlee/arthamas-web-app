@@ -2,47 +2,50 @@ import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 
 import { useRouter } from "next/router";
-import CustomerForm from "@/components/Forms/CustomerForm";
+import TruckForm from "@/components/Forms/TruckForm";
 import type {
-  CustomerFormSubmitHandler,
-  CustomerFormValues,
-} from "@/components/Forms/CustomerForm";
+  TruckFormSubmitHandler,
+  TruckFormValues,
+} from "@/components/Forms/TruckForm";
 import { FormHelperText, Typography } from "@mui/material";
 
 type RouterQuery = {
   id: string;
 };
 
-export default function PortEditPage() {
+export default function TruckEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["customer.find", id]);
+  const { data } = trpc.useQuery(["truck.find", id]);
 
-  const updateMutatation = trpc.useMutation(["customer.update"], {
+  const updateMutatation = trpc.useMutation(["truck.update"], {
     onSuccess: () => {
-      router.push("/management/customers");
+      router.push("/management/trucks");
     },
   });
 
-  const onSubmit: CustomerFormSubmitHandler<CustomerFormValues> = (data) => {
+  const onSubmit: TruckFormSubmitHandler<TruckFormValues> = (data) => {
     updateMutatation.mutate(data);
   };
 
   return (
     <MainLayout>
       <Typography variant="h4" sx={{ mb: 2 }}>
-        Edit Customer
+        Edit Truck
       </Typography>
 
       {data?.data ? (
-        <CustomerForm
+        <TruckForm
           onSubmit={onSubmit}
           isEdit
           defaultValues={{
-            ...data.data,
+            truckCode: data.data.truckCode,
+            name: data.data.name,
+            policeNumber: data.data.policeNumber,
+            type: data.data?.type,
           }}
-        ></CustomerForm>
+        ></TruckForm>
       ) : null}
 
       <FormHelperText error={updateMutatation.isError}>

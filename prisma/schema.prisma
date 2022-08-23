@@ -79,6 +79,8 @@ model Org {
   SKTDUsage                SKTDUsage[]
   SupplierCategory         SupplierCategory[]
   ProductGrade             ProductGrade[]
+  Salesperson              Salesperson[]
+  ProductType              ProductType[]
 }
 
 model User {
@@ -129,7 +131,7 @@ model Permission {
 model CustomerGroup {
   customerGroupCode String     @db.VarChar(20)
   name              String     @db.VarChar(40)
-  phone             String     @db.VarChar(20)
+  phone             String?    @db.VarChar(20)
   address           String?
   type              String?
   orgCode           String     @db.VarChar(20)
@@ -145,30 +147,31 @@ model CustomerGroup {
 }
 
 model Customer {
-  customerCode         String          @db.VarChar(20)
-  name                 String          @db.VarChar(20)
-  address              String?
-  type                 String?
-  customerGroup        CustomerGroup?  @relation(fields: [customerGroupCode, orgCode], references: [customerGroupCode, orgCode])
-  customerGroupCode    String?
-  customerContactEmail String?
-  NPWP                 String?         @db.VarChar(40)
-  NPWPAddress          String?         @db.VarChar(255)
-  top                  Int
-  orgCode              String
-  org                  Org             @relation(fields: [orgCode], references: [orgCode])
-  createdBy            String          @db.VarChar(20)
-  updatedBy            String          @db.VarChar(20)
-  createdAt            DateTime        @default(now())
-  updatedAt            DateTime        @updatedAt
-  deletedAt            DateTime?
-  vessel               Vessel[]
-  salesQuotes          SalesQuote[]
-  salesOrders          SalesOrder[]
-  productPrices        ProductPrices[]
-  SKTD                 SKTD[]
-
-  CustomerContact CustomerContact[]
+  customerCode      String            @db.VarChar(20)
+  name              String            @db.VarChar(40)
+  address           String?
+  type              String?
+  customerGroup     CustomerGroup?    @relation(fields: [customerGroupCode, orgCode], references: [customerGroupCode, orgCode])
+  customerGroupCode String?
+  contactEmail      String?
+  NPWP              String?           @db.VarChar(40)
+  NPWPAddress       String?           @db.VarChar(255)
+  salespersonCode   String?           @db.VarChar(20)
+  salesperson       Salesperson?      @relation(fields: [salespersonCode, orgCode], references: [salespersonCode, orgCode])
+  top               Int
+  orgCode           String
+  org               Org               @relation(fields: [orgCode], references: [orgCode])
+  createdBy         String            @db.VarChar(20)
+  updatedBy         String            @db.VarChar(20)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+  vessel            Vessel[]
+  salesQuotes       SalesQuote[]
+  salesOrders       SalesOrder[]
+  productPrices     ProductPrices[]
+  SKTD              SKTD[]
+  CustomerContact   CustomerContact[]
 
   @@id([customerCode, orgCode])
 }
@@ -297,30 +300,56 @@ model Port {
 }
 
 model Supplier {
-  supplierCode         String           @db.VarChar(20)
-  name                 String           @db.VarChar(40)
-  phone                String?          @db.VarChar(20)
+  supplierCode         String            @db.VarChar(20)
+  name                 String            @db.VarChar(40)
+  contactEmail         String?
+  phone                String?           @db.VarChar(20)
   address              String?
   type                 String?
   top                  Int
-  supplierCategoryCode String           @db.VarChar(20)
-  supplierCategory     SupplierCategory @relation(fields: [supplierCategoryCode, orgCode], references: [supplierCategoryCode, orgCode])
-  orgCode              String           @db.VarChar(20)
-  org                  Org              @relation(fields: [orgCode], references: [orgCode])
-  createdBy            String           @db.VarChar(20)
-  updatedBy            String           @db.VarChar(20)
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  NPWP                 String?
+  NPWPAddress          String?
+  supplierCategoryCode String?           @db.VarChar(20)
+  supplierCategory     SupplierCategory? @relation(fields: [supplierCategoryCode, orgCode], references: [supplierCategoryCode, orgCode])
+  orgCode              String            @db.VarChar(20)
+  org                  Org               @relation(fields: [orgCode], references: [orgCode])
+  createdBy            String            @db.VarChar(20)
+  updatedBy            String            @db.VarChar(20)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
   deletedAt            DateTime?
   purchaseOrders       PurchaseOrder[]
 
   @@id([supplierCode, orgCode])
 }
 
+model Salesperson {
+  salespersonCode String          @db.VarChar(20)
+  name            String          @db.VarChar(40)
+  phone           String?
+  email           String?         @db.VarChar(20)
+  orgCode         String          @db.VarChar(20)
+  org             Org             @relation(fields: [orgCode], references: [orgCode])
+  createdBy       String          @db.VarChar(20)
+  updatedBy       String          @db.VarChar(20)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+  PurchaseOrder   PurchaseOrder[]
+  Customer        Customer[]
+
+  @@id([salespersonCode, orgCode])
+}
+
 model SupplierCategory {
   supplierCategoryCode String     @db.VarChar(20)
-  supplierCategoryName String     @db.VarChar(20)
+  supplierCategoryName String     @db.VarChar(40)
   Supplier             Supplier[]
+  createdBy            String     @db.VarChar(20)
+  updatedBy            String     @db.VarChar(20)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  deletedAt            DateTime?
   org                  Org        @relation(fields: [orgCode], references: [orgCode])
   orgCode              String     @db.VarChar(20)
 
@@ -357,6 +386,9 @@ model Product {
   nptValidTo          DateTime?       @db.Date
   grade               ProductGrade    @relation(fields: [gradeCode, orgCode], references: [gradeCode, orgCode])
   gradeCode           String          @db.VarChar(10)
+  isSyntetic          Boolean
+  productTypeCode     String?         @db.VarChar(20)
+  productType         ProductType?    @relation(fields: [productTypeCode, orgCode], references: [productTypeCode, orgCode])
   productCategoryCode String          @db.VarChar(20)
   productCategory     ProductCategory @relation(fields: [productCategoryCode, orgCode], references: [productCategoryCode, orgCode])
   createdBy           String          @db.VarChar(20)
@@ -523,6 +555,21 @@ model Tax {
   deletedAt DateTime?
 
   @@id([taxCode, orgCode])
+}
+
+model ProductType {
+  productTypeCode String    @db.VarChar(20)
+  name            String    @db.VarChar(40)
+  orgCode         String    @db.VarChar(20)
+  org             Org       @relation(fields: [orgCode], references: [orgCode])
+  createdBy       String    @db.VarChar(20)
+  updatedBy       String    @db.VarChar(20)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+  Product         Product[]
+
+  @@id([productTypeCode, orgCode])
 }
 
 model ProductCategory {
@@ -891,26 +938,29 @@ model SalesReturnItem {
 }
 
 model PurchaseOrder {
-  docNo              String              @db.VarChar(40)
-  date               DateTime            @db.Date
-  dueDate            DateTime            @db.Date
-  orgCode            String              @db.VarChar(20)
-  org                Org                 @relation(fields: [orgCode], references: [orgCode])
-  supplier           Supplier            @relation(fields: [supplierCode, orgCode], references: [supplierCode, orgCode])
-  supplierCode       String              @db.VarChar(20)
-  shipTo             String
-  warehouseCode      String              @db.VarChar(20)
-  warehouse          Warehouse           @relation(fields: [warehouseCode, orgCode], references: [warehouseCode, orgCode])
-  status             String              @db.VarChar(20)
-  top                Float
-  taxRate            Float
-  taxAmount          Float
-  totalBeforeTax     Float
-  totalAmount        Float
-  paidAmount         Float
-  unpaidAmount       Float
-  purchaseOrderItems PurchaseOrderItem[]
-  PurchaseReturn     PurchaseReturn[]
+  docNo                      String              @db.VarChar(40)
+  date                       DateTime            @db.Date
+  dueDate                    DateTime            @db.Date
+  orgCode                    String              @db.VarChar(20)
+  org                        Org                 @relation(fields: [orgCode], references: [orgCode])
+  supplier                   Supplier            @relation(fields: [supplierCode, orgCode], references: [supplierCode, orgCode])
+  supplierCode               String              @db.VarChar(20)
+  shipTo                     String
+  warehouseCode              String              @db.VarChar(20)
+  warehouse                  Warehouse           @relation(fields: [warehouseCode, orgCode], references: [warehouseCode, orgCode])
+  status                     String              @db.VarChar(20)
+  top                        Float
+  taxRate                    Float
+  taxAmount                  Float
+  totalBeforeTax             Float
+  totalAmount                Float
+  paidAmount                 Float
+  unpaidAmount               Float
+  purchaseOrderItems         PurchaseOrderItem[]
+  PurchaseReturn             PurchaseReturn[]
+  Salesperson                Salesperson?        @relation(fields: [salespersonSalespersonCode, salespersonOrgCode], references: [salespersonCode, orgCode])
+  salespersonSalespersonCode String?             @db.VarChar(20)
+  salespersonOrgCode         String?             @db.VarChar(20)
 
   @@id([docNo, orgCode])
 }
