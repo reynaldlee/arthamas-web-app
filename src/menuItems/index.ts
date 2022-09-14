@@ -152,9 +152,9 @@ const menuItems = [
     heading: "Penjualan",
     items: [
       {
-        name: "Sales Inquiry",
+        name: "Sales Quotes",
         icon: DocumentScannerTwoToneIcon,
-        link: "/sales/inquiries",
+        link: "/sales/quotes",
       },
       {
         name: "Sales Order",

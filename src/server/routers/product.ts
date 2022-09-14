@@ -1,3 +1,4 @@
+import { productTypeSchema } from "./productType";
 import { unitSchema } from "./unit";
 import { productGradeSchema } from "./productGrade";
 import { prisma } from "@/prisma/index";
@@ -13,9 +14,13 @@ export const productSchema = z.object({
   nptNumber: z.string().optional(),
   nptValidFrom: z.date().optional(),
   nptValidTo: z.date().optional(),
-  gradeCode: productGradeSchema.shape.gradeCode,
+  productTypeCode: productTypeSchema.shape.productTypeCode,
+  productGradeCode: productGradeSchema.shape.productGradeCode,
   productCategoryCode: productCategorySchema.shape.productCategoryCode,
-  productUnit: z.array(unitSchema.omit({ volumes: true })).optional(),
+  productUnit: z
+    .array(unitSchema.omit({ volumes: true }))
+    .optional()
+    .nullable(),
 });
 
 export const productRouter = createProtectedRouter()
@@ -23,6 +28,11 @@ export const productRouter = createProtectedRouter()
     resolve: async ({ ctx }) => {
       const data = await prisma.product.findMany({
         where: { orgCode: ctx.user.orgCode },
+        include: {
+          productCategory: true,
+          productType: true,
+          productGrade: true,
+        },
       });
       return { data };
     },
@@ -37,7 +47,80 @@ export const productRouter = createProtectedRouter()
             orgCode: ctx.user.orgCode,
           },
         },
+        include: {
+          productCategory: true,
+          productType: true,
+          productGrade: true,
+        },
       });
+      return { data };
+    },
+  })
+  .query("findByVesselAndPort", {
+    input: z.object({
+      vesselCode: z.string(),
+      portCode: z.string(),
+    }),
+    resolve: async ({ ctx, input }) => {
+      console.log(input);
+      // console.log(
+      //   await prisma.productPrices.findMany({
+      //     where: {
+      //       customer: {
+      //         vessels: {
+      //           some: {
+      //             vesselCode: input.vesselCode,
+      //           },
+      //         },
+      //       },
+      //       portCode: input.portCode,
+      //     },
+      //   })
+      // );
+
+      const data = await prisma.product.findMany({
+        where: {
+          orgCode: ctx.user.orgCode,
+          vessels: {
+            some: {
+              vesselCode: input.vesselCode,
+            },
+          },
+        },
+        include: {
+          packagings: true,
+          productCategory: true,
+          productType: true,
+          productGrade: true,
+          productPrices: {
+            where: {
+              customer: {
+                vessels: {
+                  some: {
+                    vesselCode: input.vesselCode,
+                  },
+                },
+              },
+              port: {
+                portCode: input.portCode,
+              },
+            },
+          },
+
+          // productPrices: {
+          //   where: {
+          //     customer: {
+          //       vessels: {
+          //         some: {
+          //           vesselCode: input,
+          //         },
+          //       },
+          //     },
+          //   },
+          // },
+        },
+      });
+
       return { data };
     },
   })
@@ -47,6 +130,7 @@ export const productRouter = createProtectedRouter()
       const data = await prisma.product.create({
         data: {
           ...input,
+          unitPrice: 0,
           orgCode: ctx.user.orgCode,
           createdBy: ctx.user.username,
           updatedBy: ctx.user.username,

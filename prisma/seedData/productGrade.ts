@@ -1,14 +1,16 @@
-export const productGradeData = [
+import { Prisma } from "@prisma/client";
+
+export const productGradeData: Prisma.ProductGradeCreateManyInput[] = [
   {
-    gradeCode: "MAIN",
-    gradeName: "Main Grade",
+    productGradeCode: "MAIN",
+    name: "Main Grade",
     orgCode: "ASM",
     createdBy: "system",
     updatedBy: "system",
   },
   {
-    gradeCode: "SECONDARY",
-    gradeName: "Secondary Grade",
+    productGradeCode: "SECONDARY",
+    name: "Secondary Grade",
     orgCode: "ASM",
     createdBy: "system",
     updatedBy: "system",

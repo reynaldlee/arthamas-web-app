@@ -11,7 +11,7 @@ export const productPriceSchema = z.object({
   unitCode: z.string().max(10),
   portCode: z.string().max(10),
   customerCode: z.string().max(20),
-  price: z.number(),
+  unitPrice: z.number(),
   currencyCode: z.string().max(3),
 });
 
@@ -29,17 +29,6 @@ export const productPriceRouter = createProtectedRouter()
         include: {
           customer: { select: { name: true } },
           port: { select: { name: true } },
-          productUnit: {
-            select: {
-              productCode: true,
-              unitCode: true,
-              product: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
         },
         where: { orgCode: ctx.user.orgCode },
       });
@@ -64,7 +53,7 @@ export const productPriceRouter = createProtectedRouter()
     resolve: async ({ ctx, input }) => {
       const data = await prisma.productPrices.findUnique({
         where: {
-          productCode_unitCode_orgCode_portCode_customerCode: {
+          productCode_orgCode_portCode_customerCode: {
             ...input,
             orgCode: ctx.user.orgCode,
           },
@@ -98,7 +87,7 @@ export const productPriceRouter = createProtectedRouter()
           updatedBy: ctx.user.username,
         },
         where: {
-          productCode_unitCode_orgCode_portCode_customerCode: {
+          productCode_orgCode_portCode_customerCode: {
             ...input,
             orgCode: ctx.user.orgCode,
           },
@@ -113,7 +102,7 @@ export const productPriceRouter = createProtectedRouter()
     resolve: async ({ input, ctx }) => {
       const data = await prisma.productPrices.delete({
         where: {
-          productCode_unitCode_orgCode_portCode_customerCode: {
+          productCode_orgCode_portCode_customerCode: {
             ...input,
             orgCode: ctx.user.orgCode,
           },

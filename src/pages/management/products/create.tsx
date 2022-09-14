@@ -27,6 +27,7 @@ export default function ProductCreatePage() {
   const { register, handleSubmit } = useForm<ProductFormValues>();
 
   const productGrade = trpc.useQuery(["productGrade.findAll"]);
+  const productType = trpc.useQuery(["productType.findAll"]);
   const productCategory = trpc.useQuery(["productCategory.findAll"]);
 
   const createProductMutation = trpc.useMutation(["product.create"], {
@@ -35,7 +36,9 @@ export default function ProductCreatePage() {
     },
   });
 
-  const handleSave = (data: ProductFormValues) => {};
+  const handleSave = (data: ProductFormValues) => {
+    createProductMutation.mutate(data);
+  };
 
   // const onSave: ProductFormSubmitHandler<ProductFormValues> = (data) => {
   //   submit(data);
@@ -89,22 +92,93 @@ export default function ProductCreatePage() {
             <TextField
               select
               label="Product Grade"
-              {...register("sku")}
+              {...register("productGradeCode")}
+              defaultValue=""
               fullWidth
               required
             >
-              {productGrade.data?.data?.map((item) => (
-                <MenuItem key={item.gradeCode}>{item.gradeName}</MenuItem>
+              {(productGrade.data?.data || []).map((item) => (
+                <MenuItem
+                  key={item.productGradeCode}
+                  value={item.productGradeCode}
+                >
+                  {item.name}
+                </MenuItem>
               ))}
             </TextField>
           </Grid>
           <Grid item xs={12} md={6}>
-            <FormControlLabel control={<Switch />} label="Syntetic" />
+            <TextField
+              select
+              label="Product Type"
+              {...register("productTypeCode")}
+              defaultValue=""
+              fullWidth
+              required
+            >
+              {(productType.data?.data || []).map((item) => (
+                <MenuItem
+                  key={item.productTypeCode}
+                  value={item.productTypeCode}
+                >
+                  {item.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              select
+              label="Product Category"
+              {...register("productCategoryCode")}
+              defaultValue=""
+              fullWidth
+              required
+            >
+              {(productCategory.data?.data || []).map((item) => (
+                <MenuItem
+                  key={item.productCategoryCode}
+                  value={item.productCategoryCode}
+                >
+                  {item.name}
+                </MenuItem>
+              ))}
+            </TextField>
           </Grid>
         </Grid>
       </Box>
 
       <Box mt={4}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
+          NPT Info
+        </Typography>
+
+        <Grid container>
+          <Grid item md>
+            <TextField label="NPT No." {...register("nptNumber")} />
+          </Grid>
+          <Grid item md>
+            <TextField
+              type="date"
+              label="NPT Date"
+              {...register("nptValidFrom", {
+                valueAsDate: true,
+              })}
+            ></TextField>
+          </Grid>
+          <Grid item md>
+            <TextField
+              type="date"
+              label="NPT Valid Until"
+              {...register("nptValidTo", {
+                valueAsDate: true,
+              })}
+            ></TextField>
+          </Grid>
+        </Grid>
+      </Box>
+
+      {/* <Box mt={4}>
         <Typography variant="h4" sx={{ mb: 2 }}>
           Packaging
         </Typography>
@@ -117,7 +191,7 @@ export default function ProductCreatePage() {
             <TextField></TextField>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
       <FormHelperText error={createProductMutation.isError}>
         {createProductMutation.error?.message}

@@ -1,16 +1,18 @@
 import { Prisma } from "@prisma/client";
 
-export const unitData: Prisma.UnitCreateManyInput[] = [
+export const currencyData: Prisma.CurrencyCreateManyInput[] = [
   {
-    unitCode: "LTR",
-    unitName: "Liter",
+    currencyCode: "USD",
+    name: "USD",
+    rateIdr: 15000,
     orgCode: "ASM",
     createdBy: "system",
     updatedBy: "system",
   },
   {
-    unitCode: "KG",
-    unitName: "Kilogram",
+    currencyCode: "IDR",
+    name: "IDR",
+    rateIdr: 1,
     orgCode: "ASM",
     createdBy: "system",
     updatedBy: "system",

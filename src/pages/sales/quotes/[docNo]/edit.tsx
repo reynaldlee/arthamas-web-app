@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import _ from "lodash";
 import { trpc } from "@/utils/trpc";
@@ -26,29 +26,38 @@ import { useRouter } from "next/router";
 
 import { formatMoney } from "@/utils/format";
 
-import InfoTwoTone from "@mui/icons-material/InfoTwoTone";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SaveAltOutlinedIcon from "@mui/icons-material/SaveAltOutlined";
 
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-
+import { salesQuoteSchema } from "src/server/routers/salesQuote";
 import { pick } from "lodash";
 import { addDays, format } from "date-fns";
-import { salesOrderSchema } from "src/server/routers/salesOrder";
+import { Prisma } from "@prisma/client";
 
-type SalesOrderFormValues = z.infer<typeof salesOrderSchema>;
-// type SalesOrderProducts = {
-//   packagings: ProductPackaging[];
-// } & z.infer<typeof salesOrderItemSchema>;
+type SalesQuoteFormValues = z.infer<typeof salesQuoteSchema>;
 
-export default function SalesOrderCreate() {
+type QueryParam = {
+  docNo: string;
+};
+
+export default function SalesQuotesEdit() {
   const router = useRouter();
-  const { register, watch, setValue, handleSubmit, control } =
-    useForm<SalesOrderFormValues>();
+  const { docNo } = router.query as QueryParam;
 
-  // const [serviceList, setServiceList] = useState([{}]);
+  const { data: salesQuote } = trpc.useQuery(["salesQuote.find", docNo], {
+    enabled: !!docNo,
+  });
+
+  const { register, watch, setValue, handleSubmit, control, reset } =
+    useForm<SalesQuoteFormValues>({
+      defaultValues: {
+        customerCode: "INDOBARUNA",
+      },
+    });
+
   const customerList = trpc.useQuery(["customer.findAll"]);
   const currencyList = trpc.useQuery(["currency.findAll"]);
   const portList = trpc.useQuery(["port.findAll"]);
@@ -68,30 +77,38 @@ export default function SalesOrderCreate() {
     { enabled: !!selectedVesselCode }
   );
 
-  const createSalesOrder = trpc.useMutation(["salesOrder.create"], {
+  const createSalesQuote = trpc.useMutation(["salesQuote.update"], {
     onError: (err) => {
       console.log(err);
     },
     onSuccess: () => {
-      router.push("/sales/orders");
+      router.push("/sales/quotes");
     },
   });
+
+  // useEffect(() => {
+  //   if (salesQuote?.data) {
+  //     reset(salesQuote.data as any);
+  //   }
+  // }, [salesQuote, reset]);
+
+  console.log(watch("customerCode"));
 
   // const [productItems, setProductItems] = useState<ProductItemOption[]>([]);
   // const [serviceItems, setServiceItems] = useState([]);
 
-  const salesOrderItems = useFieldArray({
-    name: "salesOrderItems",
+  const salesQuoteItems = useFieldArray({
+    name: "salesQuoteItems",
     control: control,
   });
 
-  const salesOrderServices = useFieldArray({
-    name: "salesOrderServices",
+  const salesQuoteServices = useFieldArray({
+    name: "salesQuoteServices",
     control: control,
   });
 
-  // const [salesOrderItems, setSalesOrderItems] = useState([]);
-  // const [salesOrderServices, setSalesOrderServices] = useState([]);
+  // const [salesQuoteItems, setSalesQuoteItems] = useState([]);
+  // const [salesQuoteServices, setSalesQuoteServices] = useState([]);
 
   const selectedCustomer = trpc.useQuery(
     ["customer.find", selectedCustomerCode],
@@ -104,13 +121,14 @@ export default function SalesOrderCreate() {
     }
   };
 
-  const onSubmit = (data: SalesOrderFormValues) => {
-    createSalesOrder.mutate(data);
+  const onSubmit = (data: SalesQuoteFormValues) => {
+    console.log(data);
+    // createSalesQuote.mutate(data);
   };
 
   const handleAddMoreProduct = () => {
-    salesOrderItems.append({
-      lineNo: salesOrderItems.fields.length + 1,
+    salesQuoteItems.append({
+      lineNo: salesQuoteItems.fields.length + 1,
       desc: "",
       qty: 1,
       productCode: "",
@@ -124,7 +142,7 @@ export default function SalesOrderCreate() {
   };
 
   const handleAddMoreService = () => {
-    salesOrderServices.append({
+    salesQuoteServices.append({
       serviceCode: "",
       amount: 0,
       desc: "",
@@ -133,30 +151,30 @@ export default function SalesOrderCreate() {
   };
 
   const handleRemoveProduct = (index: number) => {
-    salesOrderItems.remove(index);
+    salesQuoteItems.remove(index);
     calculateProductSubtotal();
   };
 
   const handleRemoveService = (index: number) => {
-    salesOrderServices.remove(index);
+    salesQuoteServices.remove(index);
     calculateServiceSubtotal();
   };
 
   const handleProductQtyChange = (index: number) => (value: number) => {
-    const unitQty = watch(`salesOrderItems.${index}.unitQty`);
-    setValue(`salesOrderItems.${index}.qty`, value);
-    setValue(`salesOrderItems.${index}.totalUnitQty`, value * unitQty);
+    const unitQty = watch(`salesQuoteItems.${index}.unitQty`);
+    setValue(`salesQuoteItems.${index}.qty`, value);
+    setValue(`salesQuoteItems.${index}.totalUnitQty`, value * unitQty);
     calculateProductAmount(index);
   };
 
   const calculateProductsAmount = () => {
-    salesOrderItems.fields.forEach((_, index) => {
+    salesQuoteItems.fields.forEach((_, index) => {
       calculateProductAmount(index);
     });
   };
 
   const calculateServicesAmount = () => {
-    salesOrderServices.fields.forEach((_, index) => {
+    salesQuoteServices.fields.forEach((_, index) => {
       calculateServiceAmount(index);
     });
     calculateServiceSubtotal();
@@ -164,7 +182,7 @@ export default function SalesOrderCreate() {
 
   const calculateServiceSubtotal = () => {
     const servicesSubtotal = _.sumBy(
-      watch("salesOrderServices"),
+      watch("salesQuoteServices"),
       (o) => o.amount
     );
     setValue("totalService", servicesSubtotal);
@@ -172,7 +190,7 @@ export default function SalesOrderCreate() {
   };
 
   const calculateProductSubtotal = () => {
-    const productSubtotal = _.sumBy(watch("salesOrderItems"), (o) => o.amount);
+    const productSubtotal = _.sumBy(watch("salesQuoteItems"), (o) => o.amount);
     setValue("totalProduct", productSubtotal);
     calculateTotalAmount();
   };
@@ -187,27 +205,27 @@ export default function SalesOrderCreate() {
   };
 
   const calculateProductAmount = (index: number) => {
-    const totalUnitQty = watch(`salesOrderItems.${index}.totalUnitQty`);
-    const unitPrice = watch(`salesOrderItems.${index}.unitPrice`);
+    const totalUnitQty = watch(`salesQuoteItems.${index}.totalUnitQty`);
+    const unitPrice = watch(`salesQuoteItems.${index}.unitPrice`);
     const exchangeRate = watch("exchangeRate");
     setValue(
-      `salesOrderItems.${index}.amount`,
+      `salesQuoteItems.${index}.amount`,
       totalUnitQty * unitPrice * exchangeRate
     );
     calculateProductSubtotal();
   };
 
   const calculateServiceAmount = (index: number) => {
-    const unitPrice = watch(`salesOrderServices.${index}.unitPrice`);
+    const unitPrice = watch(`salesQuoteServices.${index}.unitPrice`);
     const exchangeRate = watch("exchangeRate");
-    setValue(`salesOrderServices.${index}.amount`, unitPrice * exchangeRate);
+    setValue(`salesQuoteServices.${index}.amount`, unitPrice * exchangeRate);
     calculateServiceSubtotal();
   };
 
   const calculateTotalUnitQty = (index: number) => {
-    const qty = watch(`salesOrderItems.${index}.qty`);
-    const unitQty = watch(`salesOrderItems.${index}.unitQty`);
-    setValue(`salesOrderItems.${index}.totalUnitQty`, qty * unitQty);
+    const qty = watch(`salesQuoteItems.${index}.qty`);
+    const unitQty = watch(`salesQuoteItems.${index}.unitQty`);
+    setValue(`salesQuoteItems.${index}.totalUnitQty`, qty * unitQty);
     calculateProductsAmount();
   };
 
@@ -294,13 +312,13 @@ export default function SalesOrderCreate() {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                {...register("deliveryDate")}
+                {...register("validUntil")}
                 fullWidth
                 defaultValue={format(
                   addDays(new Date(), selectedCustomer.data?.data?.top || 30),
                   "yyyy-MM-dd"
                 )}
-                label="Delivery Date"
+                label="Quotation Valid Until"
               ></TextField>
             </Grid>
           </Grid>
@@ -397,7 +415,7 @@ export default function SalesOrderCreate() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {salesOrderItems.fields.map((item, index) => (
+                  {salesQuoteItems.fields.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Autocomplete
@@ -420,11 +438,11 @@ export default function SalesOrderCreate() {
                             //   return newState;
                             // });
 
-                            salesOrderItems.update(index, {
-                              ...salesOrderItems.fields[index],
+                            salesQuoteItems.update(index, {
+                              ...salesQuoteItems.fields[index],
                               productCode: value.productCode,
                               unitPrice: value.productPrices[0]?.unitPrice || 0,
-                              qty: 1,
+                              qty: new Prisma.Decimal(1),
                             });
                           }}
                           renderInput={(params) => (
@@ -443,7 +461,7 @@ export default function SalesOrderCreate() {
                           multiline
                           size="small"
                           placeholder="Description"
-                          {...register(`salesOrderItems.${index}.desc`)}
+                          {...register(`salesQuoteItems.${index}.desc`)}
                         />
                       </TableCell>
 
@@ -458,7 +476,7 @@ export default function SalesOrderCreate() {
                             size="small"
                             onValueChange={handleProductQtyChange(index)}
                             placeholder="Qty"
-                            value={watch(`salesOrderItems.${index}.qty`)}
+                            value={watch(`salesQuoteItems.${index}.qty`)}
                           />
                           {/* <Tooltip
                             color={
@@ -482,7 +500,7 @@ export default function SalesOrderCreate() {
                             productList.data?.data.find(
                               (item) =>
                                 item.productCode ===
-                                salesOrderItems.fields[index].productCode
+                                salesQuoteItems.fields[index].productCode
                             )?.packagings!
                           }
                           isOptionEqualToValue={(option, value) =>
@@ -494,19 +512,19 @@ export default function SalesOrderCreate() {
                           placeholder="Packaging"
                           onChange={(_, value) => {
                             setValue(
-                              `salesOrderItems.${index}.packagingCode`,
+                              `salesQuoteItems.${index}.packagingCode`,
                               value.packagingCode
                             );
                             setValue(
-                              `salesOrderItems.${index}.unitCode`,
+                              `salesQuoteItems.${index}.unitCode`,
                               value.unitCode
                             );
                             setValue(
-                              `salesOrderItems.${index}.unitQty`,
+                              `salesQuoteItems.${index}.unitQty`,
                               value.unitQty
                             );
                             setValue(
-                              `salesOrderItems.${index}.unitQty`,
+                              `salesQuoteItems.${index}.unitQty`,
                               value.unitQty
                             );
                             calculateTotalUnitQty(index);
@@ -525,11 +543,11 @@ export default function SalesOrderCreate() {
                         <TextFieldNumber
                           size="small"
                           fullWidth
-                          value={watch(`salesOrderItems.${index}.unitPrice`)}
+                          value={watch(`salesQuoteItems.${index}.unitPrice`)}
                           placeholder="Unit Price"
                           onValueChange={(value) => {
                             setValue(
-                              `salesOrderItems.${index}.unitPrice`,
+                              `salesQuoteItems.${index}.unitPrice`,
                               value
                             );
                             calculateProductAmount(index);
@@ -544,7 +562,7 @@ export default function SalesOrderCreate() {
                           size="small"
                           placeholder="Volume"
                           readOnly
-                          value={watch(`salesOrderItems.${index}.totalUnitQty`)}
+                          value={watch(`salesQuoteItems.${index}.totalUnitQty`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -554,7 +572,7 @@ export default function SalesOrderCreate() {
                           placeholder="Unit"
                           contentEditable={false}
                           size="small"
-                          value={watch(`salesOrderItems.${index}.unitCode`)}
+                          value={watch(`salesQuoteItems.${index}.unitCode`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -563,7 +581,7 @@ export default function SalesOrderCreate() {
                           size="small"
                           placeholder="Amount"
                           contentEditable={false}
-                          value={watch(`salesOrderItems.${index}.amount`)}
+                          value={watch(`salesQuoteItems.${index}.amount`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -615,7 +633,7 @@ export default function SalesOrderCreate() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {salesOrderServices.fields.map((item, index) => (
+                  {salesQuoteServices.fields.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Autocomplete
@@ -628,11 +646,11 @@ export default function SalesOrderCreate() {
                           getOptionLabel={(option) => option.name}
                           onChange={(_, value) => {
                             setValue(
-                              `salesOrderServices.${index}.serviceCode`,
+                              `salesQuoteServices.${index}.serviceCode`,
                               value?.serviceCode!
                             );
                             setValue(
-                              `salesOrderServices.${index}.unitPrice`,
+                              `salesQuoteServices.${index}.unitPrice`,
                               value?.unitPrice!
                             );
                             calculateServiceAmount(index);
@@ -653,17 +671,17 @@ export default function SalesOrderCreate() {
                           multiline
                           size="small"
                           placeholder="Description"
-                          {...register(`salesOrderServices.${index}.desc`)}
+                          {...register(`salesQuoteServices.${index}.desc`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
                           fullWidth
                           size="small"
-                          value={watch(`salesOrderServices.${index}.unitPrice`)}
+                          value={watch(`salesQuoteServices.${index}.unitPrice`)}
                           onValueChange={(value) => {
                             setValue(
-                              `salesOrderServices.${index}.unitPrice`,
+                              `salesQuoteServices.${index}.unitPrice`,
                               value
                             );
                             calculateServiceAmount(index);
@@ -678,7 +696,7 @@ export default function SalesOrderCreate() {
                           size="small"
                           name="amount"
                           readOnly
-                          value={watch(`salesOrderServices.${index}.amount`)}
+                          value={watch(`salesQuoteServices.${index}.amount`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -856,7 +874,7 @@ export default function SalesOrderCreate() {
                 variant="contained"
                 color="error"
                 onClick={handleCancel}
-                disabled={createSalesOrder.isLoading}
+                disabled={createSalesQuote.isLoading}
               >
                 Cancel
               </Button>
@@ -864,11 +882,11 @@ export default function SalesOrderCreate() {
             <Grid item>
               <Button
                 variant="contained"
-                disabled={createSalesOrder.isLoading}
+                disabled={createSalesQuote.isLoading}
                 startIcon={<SaveAltOutlinedIcon />}
                 onClick={handleSubmit(onSubmit)}
               >
-                Submit
+                Edit
               </Button>
             </Grid>
           </Grid>

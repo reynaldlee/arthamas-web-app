@@ -1,16 +1,18 @@
 import { Prisma } from "@prisma/client";
 
-export const unitData: Prisma.UnitCreateManyInput[] = [
+export const portData: Prisma.PortCreateManyInput[] = [
   {
-    unitCode: "LTR",
-    unitName: "Liter",
+    portCode: "TNJPRK",
+    name: "Tanjung Priok",
+    area: "Jakarta",
     orgCode: "ASM",
     createdBy: "system",
     updatedBy: "system",
   },
   {
-    unitCode: "KG",
-    unitName: "Kilogram",
+    portCode: "MRK",
+    name: "Pelabuhan Merak",
+    area: "Jakarta",
     orgCode: "ASM",
     createdBy: "system",
     updatedBy: "system",

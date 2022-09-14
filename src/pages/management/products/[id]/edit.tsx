@@ -17,11 +17,11 @@ export default function PortEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["customer.find", id]);
+  const { data } = trpc.useQuery(["product.find", id]);
 
-  const updateMutatation = trpc.useMutation(["customer.update"], {
+  const updateMutatation = trpc.useMutation(["product.update"], {
     onSuccess: () => {
-      router.push("/management/customers");
+      router.push("/management/products");
     },
   });
 

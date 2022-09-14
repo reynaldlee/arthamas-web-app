@@ -1,3 +1,9 @@
+import { salesOrderRouter } from "./salesOrder";
+import { taxRouter } from "./tax";
+import { serviceRouter } from "./service";
+import { currencyRouter } from "./currency";
+import { salesQuoteRouter } from "./salesQuote";
+import { productTypeRouter } from "./productType";
 import { productGradeRouter } from "./productGrade";
 import { productCategoryRouter } from "./productCategory";
 import { profileRouter } from "./profile";
@@ -34,16 +40,22 @@ export const appRouter = createRouter()
   .merge("area.", areaRouter)
   .merge("customer.", customerRouter)
   .merge("customerGroup.", customerGroupRouter)
+  .merge("currency.", currencyRouter)
   .merge("org.", orgRouter)
   .merge("port.", portRouter)
   .merge("product.", productRouter)
+  .merge("productType.", productTypeRouter)
   .merge("productCategory.", productCategoryRouter)
   .merge("productGrade.", productGradeRouter)
   .merge("supplier.", supplierRouter)
+  .merge("salesQuote.", salesQuoteRouter)
+  .merge("salesOrder.", salesOrderRouter)
   .merge("unit.", unitRouter)
   .merge("user.", userRouter)
   .merge("profile.", profileRouter)
+  .merge("service.", serviceRouter)
   .merge("truck.", truckRouter)
+  .merge("tax.", taxRouter)
   .merge("vessel.", vesselRouter)
   .merge("warehouse.", warehouseRouter);
 

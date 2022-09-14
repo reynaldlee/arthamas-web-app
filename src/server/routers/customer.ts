@@ -28,6 +28,7 @@ export const customerRouter = createProtectedRouter()
   .query("find", {
     input: z.string(),
     resolve: async ({ ctx, input }) => {
+      console.log(input);
       const data = await prisma.customer.findUnique({
         where: {
           customerCode_orgCode: {
@@ -35,7 +36,12 @@ export const customerRouter = createProtectedRouter()
             orgCode: ctx.user.orgCode,
           },
         },
+
+        include: {
+          vessels: true,
+        },
       });
+
       return { data };
     },
   })

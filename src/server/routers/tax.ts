@@ -8,7 +8,7 @@ export const taxSchema = z.object({
   taxRate: z.number().min(0).max(1),
 });
 
-export const unitRouter = createProtectedRouter()
+export const taxRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async ({ ctx }) => {
       const data = await prisma.tax.findMany({

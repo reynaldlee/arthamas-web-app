@@ -9,8 +9,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
+import { formatDate } from "@/utils/format";
 
-export default function CustomerIndex() {
+export default function ProductIndex() {
   const { data, refetch, isLoading } = trpc.useQuery(["product.findAll"]);
   const tableId = useId();
 
@@ -38,15 +39,39 @@ export default function CustomerIndex() {
         title="Products"
         options={{
           tableId: tableId,
-          selectableRowsHideCheckboxes: true,
+          // selectableRowsHideCheckboxes: true,
         }}
         columns={[
           { label: "Product Code", name: "productCode" },
           { label: "Product Name", name: "name" },
           { label: "NPT No", name: "nptNumber" },
-          { label: "NPT s/d", name: "nptValidTo" },
-          { label: "Grade", name: "grade.name" },
-          { label: "Syntethic", name: "isSyntetic" },
+          {
+            label: "NPT s/d",
+            name: "nptValidTo",
+            options: {
+              customBodyRender(value) {
+                return formatDate(value);
+              },
+            },
+          },
+          {
+            label: "Grade",
+            name: "productGrade",
+            options: {
+              customBodyRender(value) {
+                return value?.name;
+              },
+            },
+          },
+          {
+            label: "Type",
+            name: "productType",
+            options: {
+              customBodyRender(value) {
+                return value?.name;
+              },
+            },
+          },
           {
             name: "",
             label: "Action",

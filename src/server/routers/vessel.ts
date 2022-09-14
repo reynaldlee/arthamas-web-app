@@ -22,11 +22,9 @@ export const vesselRouter = createProtectedRouter()
       const data = await prisma.vessel.findMany({
         where: { orgCode: ctx.user.orgCode },
         include: {
-          products: {
-            include: {
-              product: {
-                select: { productCode: true },
-              },
+          customer: {
+            select: {
+              name: true,
             },
           },
         },
@@ -43,6 +41,18 @@ export const vesselRouter = createProtectedRouter()
             vesselCode: input,
             orgCode: ctx.user.orgCode,
           },
+        },
+      });
+      return { data };
+    },
+  })
+  .query("findByCustomerCode", {
+    input: z.string(),
+    resolve: async ({ ctx, input }) => {
+      const data = await prisma.vessel.findMany({
+        where: {
+          customerCode: input,
+          orgCode: ctx.user.orgCode,
         },
       });
       return { data };

@@ -21,7 +21,7 @@ export const authRouter = createRouter()
 
       if (!data) {
         throw new TRPCError({
-          message: "Username atau password salah",
+          message: "Username tidak ditemukan",
           code: "BAD_REQUEST",
         });
       }

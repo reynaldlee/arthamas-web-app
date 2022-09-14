@@ -2,29 +2,27 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
-export const productGradeSchema = z.object({
-  productGradeCode: z.string().max(10),
+export const productTypeSchema = z.object({
+  productTypeCode: z.string().max(10),
   name: z.string().max(40),
 });
 
-export const productGradeRouter = createProtectedRouter()
+export const productTypeRouter = createProtectedRouter()
   .query("findAll", {
     resolve: async ({ ctx }) => {
-      const data = await prisma.productGrade.findMany({
+      const data = await prisma.productType.findMany({
         where: { orgCode: ctx.user.orgCode },
       });
-      console.log(data);
-
       return { data };
     },
   })
   .query("find", {
     input: z.string(),
     resolve: async ({ ctx, input }) => {
-      const data = await prisma.productGrade.findUnique({
+      const data = await prisma.productType.findUnique({
         where: {
-          productGradeCode_orgCode: {
-            productGradeCode: input,
+          productTypeCode_orgCode: {
+            productTypeCode: input,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -33,9 +31,9 @@ export const productGradeRouter = createProtectedRouter()
     },
   })
   .mutation("create", {
-    input: productGradeSchema,
+    input: productTypeSchema,
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.productGrade.create({
+      const data = await prisma.productType.create({
         data: {
           ...input,
           orgCode: ctx.user.orgCode,
@@ -48,22 +46,19 @@ export const productGradeRouter = createProtectedRouter()
     },
   })
   .mutation("update", {
-    input: productGradeSchema
-      .omit({ productGradeCode: true })
-      .partial()
-      .extend({
-        productGradeCode: productGradeSchema.shape.productGradeCode,
-      }),
+    input: productTypeSchema.omit({ productTypeCode: true }).partial().extend({
+      productTypeCode: productTypeSchema.shape.productTypeCode,
+    }),
     resolve: async ({ input, ctx }) => {
-      const { productGradeCode, ...updatedFields } = input;
-      const data = await prisma.productGrade.update({
+      const { productTypeCode, ...updatedFields } = input;
+      const data = await prisma.productType.update({
         data: {
           ...updatedFields,
           updatedBy: ctx.user.username,
         },
         where: {
-          productGradeCode_orgCode: {
-            productGradeCode: input.productGradeCode,
+          productTypeCode_orgCode: {
+            productTypeCode: input.productTypeCode,
             orgCode: ctx.user.orgCode,
           },
         },
@@ -75,10 +70,10 @@ export const productGradeRouter = createProtectedRouter()
   .mutation("delete", {
     input: z.string(),
     resolve: async ({ input, ctx }) => {
-      const data = await prisma.productGrade.delete({
+      const data = await prisma.productType.delete({
         where: {
-          productGradeCode_orgCode: {
-            productGradeCode: input,
+          productTypeCode_orgCode: {
+            productTypeCode: input,
             orgCode: ctx.user.orgCode,
           },
         },

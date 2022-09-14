@@ -15,12 +15,18 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useRouter } from "next/router";
 import { trpc } from "@/utils/trpc";
 import { setCookie } from "nookies";
+import { FormHelperText } from "@mui/material";
 
 const theme = createTheme();
 
 export default function SignInSide() {
   const router = useRouter();
-  const { mutate: login, error, isError } = trpc.useMutation(["auth.login"]);
+  const {
+    mutate: login,
+    error,
+    isError,
+    isLoading,
+  } = trpc.useMutation(["auth.login"]);
 
   const [fields, setFields] = React.useState({
     username: "",
@@ -125,11 +131,16 @@ export default function SignInSide() {
               <Button
                 type="submit"
                 fullWidth
+                disabled={isLoading}
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
               >
                 Sign In
               </Button>
+              {isError && (
+                <FormHelperText error={isError}>{error.message}</FormHelperText>
+              )}
+
               {/* <Grid container>
                 <Grid item xs>
                   <Link href="#" variant="body2">
