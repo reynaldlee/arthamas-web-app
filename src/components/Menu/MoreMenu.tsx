@@ -1,17 +1,20 @@
 import { MoreVert } from "@mui/icons-material";
-import { IconButton, Menu, MenuItem } from "@mui/material";
+import { IconButton, Menu, MenuItem, Typography } from "@mui/material";
 import { useState } from "react";
 
 type MenuActions = {
   label: string;
   onClick: () => void;
+  disabled?: boolean;
+  danger?: boolean;
 };
 
 type Props = {
   actions: MenuActions[];
+  disabled?: boolean;
 };
 
-export default function MoreMenu({ actions }: Props) {
+export default function MoreMenu({ actions, disabled }: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -24,6 +27,7 @@ export default function MoreMenu({ actions }: Props) {
   return (
     <div>
       <IconButton
+        disabled={disabled}
         aria-label="more"
         id="long-button"
         aria-controls={open ? "long-menu" : undefined}
@@ -44,7 +48,9 @@ export default function MoreMenu({ actions }: Props) {
       >
         {actions.map((option, index) => (
           <MenuItem key={index} onClick={option.onClick}>
-            {option.label}
+            <Typography color={`${option.danger ? "error" : "main"}`}>
+              {option.label}
+            </Typography>
           </MenuItem>
         ))}
       </Menu>

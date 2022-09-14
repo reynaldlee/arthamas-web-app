@@ -1,12 +1,13 @@
 import { Typography } from "@mui/material";
 
-type Status = "Open" | "Completed" | "Cancelled" | "Partial";
+type Status = "Open" | "Completed" | "Cancelled" | "Partial" | "OnProgress";
 
 const StatusColor = {
-  Open: "gray",
+  Open: "darkblue",
   Completed: "green",
   Cancelled: "red",
   Partial: "orange",
+  OnProgress: "orange",
 };
 
 type Props = {

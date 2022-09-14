@@ -164,21 +164,12 @@ const menuItems = [
       {
         name: "SP2B",
         icon: DocumentScannerTwoToneIcon,
-        items: [
-          {
-            name: "List SP2B",
-            link: "/sales/sp2b",
-          },
-          {
-            name: "Buat SP2B",
-            link: "/sales/sp2b/create",
-          },
-        ],
+        link: "/sales/sp2b",
       },
       {
-        name: "Delivery Receipt",
+        name: "Delivery",
         icon: DocumentScannerTwoToneIcon,
-        link: "/sales/delivery",
+        link: "/sales/deliveries",
       },
 
       {

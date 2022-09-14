@@ -29,13 +29,14 @@ export const salesOrderServiceSchema = z.object({
 });
 
 export const salesOrderSchema = z.object({
+  salesQuoteDocNo: z.string().optional().nullable(),
   customerCode: z.string(),
   currencyCode: z.string(),
   portCode: z.string(),
-  date: z.string(),
-  deliveryDate: z.string(),
+  date: z.date(),
+  dueDate: z.date(),
   poNumber: z.string(),
-  poDate: z.string(),
+  poDate: z.date(),
   poNotes: z.string(),
   vesselCode: z.string(),
   exchangeRate: z.number(),
@@ -62,6 +63,9 @@ export const salesOrderRouter = createProtectedRouter()
           customer: { select: { name: true } },
           vessel: { select: { name: true } },
         },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
 
       return { data };
@@ -78,10 +82,19 @@ export const salesOrderRouter = createProtectedRouter()
           },
         },
         include: {
-          salesOrderItems: true,
+          warehouse: true,
+          customer: true,
+          port: true,
+          salesOrderItems: {
+            include: {
+              product: true,
+              packaging: true,
+            },
+          },
           salesOrderServices: true,
         },
       });
+
       return { data };
     },
   })
@@ -91,29 +104,45 @@ export const salesOrderRouter = createProtectedRouter()
       const { salesOrderItems, salesOrderServices, ...salesOrder } = input;
       const docNo = generateDocNo("SO-");
 
-      const data = await prisma.salesOrder.create({
-        data: {
-          docNo: docNo,
-          ...salesOrder,
-          isSKTD: false,
-          date: new Date(input.date),
-          deliveryDate: new Date(input.deliveryDate),
-          poDate: new Date(input.poDate),
-          status: "Open",
-          orgCode: ctx.user.orgCode,
-          salesOrderItems: {
-            createMany: {
-              data: salesOrderItems as any,
+      const data = prisma.$transaction(async (prisma) => {
+        if (input.salesQuoteDocNo) {
+          await prisma.salesQuote.update({
+            data: {
+              status: "Completed",
             },
-          },
-          salesOrderServices: {
-            createMany: {
-              data: salesOrderServices as any,
+            where: {
+              docNo_orgCode: {
+                docNo: input.salesQuoteDocNo,
+                orgCode: ctx.user.orgCode,
+              },
             },
+          });
+        }
+
+        return await prisma.salesOrder.create({
+          data: {
+            docNo: docNo,
+            ...salesOrder,
+            isSKTD: false,
+            date: input.date,
+            dueDate: input.dueDate,
+            poDate: input.poDate,
+            status: "Open",
+            orgCode: ctx.user.orgCode,
+            salesOrderItems: {
+              createMany: {
+                data: salesOrderItems as any,
+              },
+            },
+            salesOrderServices: {
+              createMany: {
+                data: salesOrderServices as any,
+              },
+            },
+            createdBy: ctx.user.username,
+            updatedBy: ctx.user.username,
           },
-          createdBy: ctx.user.username,
-          updatedBy: ctx.user.username,
-        },
+        });
       });
 
       return { data };
@@ -168,19 +197,56 @@ export const salesOrderRouter = createProtectedRouter()
 
       return { data };
     },
-  });
-// .mutation("delete", {
-//   input: z.string(),
-//   resolve: async ({ input, ctx }) => {
-//     const data = await prisma.product.delete({
-//       where: {
-//         productCode_orgCode: {
-//           productCode: input,
-//           orgCode: ctx.user.orgCode,
-//         },
-//       },
-//     });
+  })
+  .mutation("cancel", {
+    input: z.string(),
+    resolve: async ({ input, ctx }) => {
+      const result = await prisma.$transaction(async (prisma) => {
+        const data = await prisma.salesOrder.update({
+          where: {
+            docNo_orgCode: {
+              docNo: input,
+              orgCode: ctx.user.orgCode,
+            },
+          },
+          data: {
+            status: "Cancelled",
+            cancelledBy: ctx.user.username,
+            cancelledAt: new Date(),
+          },
+        });
 
-//     return { data };
-//   },
-// });
+        if (data.salesQuoteDocNo) {
+          updateSalesQuoteStatus(prisma, {
+            docNo: data.salesQuoteDocNo,
+            orgCode: data.orgCode,
+          });
+        }
+
+        return data;
+      });
+
+      return { data: result };
+    },
+  });
+
+async function updateSalesQuoteStatus(
+  prisma: Prisma.TransactionClient,
+  salesQuote: { orgCode: string; docNo: string }
+) {
+  const countSO = await prisma.salesOrder.count({
+    where: {
+      salesQuoteDocNo: salesQuote.docNo,
+      orgCode: salesQuote.orgCode,
+    },
+  });
+
+  await prisma.salesQuote.update({
+    data: {
+      status: countSO > 0 ? "Completed" : "Open",
+    },
+    where: {
+      docNo_orgCode: salesQuote,
+    },
+  });
+}

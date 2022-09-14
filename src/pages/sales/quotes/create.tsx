@@ -77,9 +77,6 @@ export default function SalesQuotesCreate() {
     },
   });
 
-  // const [productItems, setProductItems] = useState<ProductItemOption[]>([]);
-  // const [serviceItems, setServiceItems] = useState([]);
-
   const salesQuoteItems = useFieldArray({
     name: "salesQuoteItems",
     control: control,
@@ -89,9 +86,6 @@ export default function SalesQuotesCreate() {
     name: "salesQuoteServices",
     control: control,
   });
-
-  // const [salesQuoteItems, setSalesQuoteItems] = useState([]);
-  // const [salesQuoteServices, setSalesQuoteServices] = useState([]);
 
   const selectedCustomer = trpc.useQuery(
     ["customer.find", selectedCustomerCode],
@@ -182,12 +176,13 @@ export default function SalesQuotesCreate() {
   const calculateTotalAmount = () => {
     const totalProduct = watch("totalProduct") || 0;
     const totalService = watch("totalService") || 0;
-    const taxAmount = watch("taxAmount") || 0;
     const taxRate = watch("taxRate") || 0;
+
     const totalBeforeTax = totalProduct + totalService;
+    const taxAmount = totalBeforeTax * taxRate;
 
     setValue("totalBeforeTax", totalBeforeTax);
-    setValue("taxAmount", taxRate * totalBeforeTax);
+    setValue("taxAmount", taxAmount);
     setValue("totalAmount", totalProduct + totalService + taxAmount);
   };
 
@@ -264,7 +259,6 @@ export default function SalesQuotesCreate() {
           </Grid>
           <Grid item md={2} xs={6}>
             <TextFieldNumber
-              fullWidth
               label="Exchange Rate"
               required
               value={watch("exchangeRate")}
@@ -283,7 +277,7 @@ export default function SalesQuotesCreate() {
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
               <TextField
-                {...register("date")}
+                {...register("date", { valueAsDate: true })}
                 type="date"
                 InputLabelProps={{
                   shrink: true,
@@ -299,7 +293,7 @@ export default function SalesQuotesCreate() {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                {...register("validUntil")}
+                {...register("validUntil", { valueAsDate: true })}
                 fullWidth
                 defaultValue={format(
                   addDays(new Date(), selectedCustomer.data?.data?.top || 30),

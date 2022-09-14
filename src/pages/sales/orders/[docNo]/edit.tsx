@@ -39,21 +39,20 @@ import { salesOrderSchema } from "src/server/routers/salesOrder";
 import { SalesOrderItem, SalesOrderService } from "@prisma/client";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderSchema>;
-
-type QueryParams = {
-  salesQuoteDocNo?: string;
+type QueryParam = {
+  docNo: string;
 };
 
-export default function SalesOrderCreate() {
+export default function SalesOrderEdit() {
   const router = useRouter();
-  const { salesQuoteDocNo } = router.query as QueryParams;
+  const { docNo } = router.query as QueryParam;
+
+  const { data: salesOrder } = trpc.useQuery(["salesOrder.find", docNo], {
+    enabled: !!docNo,
+  });
 
   const { register, watch, setValue, handleSubmit, control, reset } =
     useForm<SalesOrderFormValues>();
-
-  const salesQuote = trpc.useQuery(["salesQuote.find", salesQuoteDocNo!], {
-    enabled: !!salesQuoteDocNo,
-  });
 
   const customerList = trpc.useQuery(["customer.findAll"]);
   const currencyList = trpc.useQuery(["currency.findAll"]);
@@ -74,7 +73,7 @@ export default function SalesOrderCreate() {
     { enabled: !!selectedVesselCode }
   );
 
-  const createSalesOrder = trpc.useMutation(["salesOrder.create"], {
+  const updateSalesOrder = trpc.useMutation(["salesOrder.update"], {
     onError: (err) => {
       console.log(err);
     },
@@ -82,9 +81,6 @@ export default function SalesOrderCreate() {
       router.push("/sales/orders");
     },
   });
-
-  // const [productItems, setProductItems] = useState<ProductItemOption[]>([]);
-  // const [serviceItems, setServiceItems] = useState([]);
 
   const salesOrderItems = useFieldArray({
     name: "salesOrderItems",
@@ -97,41 +93,10 @@ export default function SalesOrderCreate() {
   });
 
   useEffect(() => {
-    if (salesQuote.data) {
-      const { salesQuoteItems, salesQuoteServices, ...fields } =
-        salesQuote.data.data!;
-
-      //@ts-ignore
-      reset({
-        ...fields,
-        date: new Date(),
-        dueDate: new Date(),
-        //@ts-ignore
-        salesOrderItems: salesQuoteItems.map((item) => ({
-          productCode: item.productCode,
-          lineNo: item.lineNo,
-          amount: item.amount,
-          desc: item.desc,
-          packagingCode: item.packagingCode,
-          qty: item.qty,
-          totalUnitQty: item.totalUnitQty,
-          unitCode: item.unitCode,
-          unitPrice: item.unitPrice,
-          unitQty: item.unitQty,
-        })),
-        //@ts-ignore
-        salesOrderServices: salesQuoteServices.map((item) => ({
-          amount: item.amount,
-          desc: item.desc,
-          serviceCode: item.serviceCode,
-          unitPrice: item.unitPrice,
-        })),
-      });
+    if (salesOrder?.data) {
+      reset(salesOrder.data as any);
     }
-  }, [salesQuote.data, reset]);
-
-  // const [salesOrderItems, setSalesOrderItems] = useState([]);
-  // const [salesOrderServices, setSalesOrderServices] = useState([]);
+  }, [salesOrder, reset]);
 
   const selectedCustomer = trpc.useQuery(
     ["customer.find", selectedCustomerCode],
@@ -145,7 +110,10 @@ export default function SalesOrderCreate() {
   };
 
   const onSubmit = (data: SalesOrderFormValues) => {
-    createSalesOrder.mutate(data);
+    updateSalesOrder.mutate({
+      docNo: docNo,
+      fields: data,
+    });
   };
 
   const handleAddMoreProduct = () => {
@@ -265,7 +233,7 @@ export default function SalesOrderCreate() {
         {/* <Box sx={{ py: 2 }}>
           <PageHeader title="Create Sales Inquiries"></PageHeader>
         </Box> */}
-        {salesQuoteDocNo ? (
+        {salesOrder?.data?.salesQuoteDocNo ? (
           <TextField
             disabled
             InputLabelProps={{
@@ -273,7 +241,7 @@ export default function SalesOrderCreate() {
             }}
             label="Sales Quote No"
             {...register("salesQuoteDocNo", {
-              value: salesQuoteDocNo,
+              value: salesOrder.data.salesQuoteDocNo,
             })}
           />
         ) : null}
@@ -342,7 +310,9 @@ export default function SalesOrderCreate() {
           </Grid>
           <Grid item md={2} xs={6}>
             <TextField
-              {...register("poDate", { valueAsDate: true })}
+              {...register("poDate", {
+                valueAsDate: true,
+              })}
               type="date"
               InputLabelProps={{
                 shrink: true,
@@ -371,7 +341,9 @@ export default function SalesOrderCreate() {
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
               <TextField
-                {...register("date", { valueAsDate: true })}
+                {...register("date", {
+                  valueAsDate: true,
+                })}
                 type="date"
                 InputLabelProps={{
                   shrink: true,
@@ -838,7 +810,7 @@ export default function SalesOrderCreate() {
                 alignItems="center"
               >
                 <Box display="flex" flexDirection={"row"} alignItems="center">
-                  <Typography variant="h6">Tax</Typography>
+                  <Typography variant="h4">Tax</Typography>
                   <Autocomplete
                     sx={{ ml: 4, width: 200 }}
                     size="small"
@@ -859,7 +831,7 @@ export default function SalesOrderCreate() {
                     )}
                   />
                 </Box>
-                <Typography variant="h6">
+                <Typography variant="h4">
                   {formatMoney(watch("taxAmount"))}
                 </Typography>
               </Box>

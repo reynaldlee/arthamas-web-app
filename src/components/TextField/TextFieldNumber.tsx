@@ -28,6 +28,7 @@ export default function TextFieldNumber({
   value,
   size,
   disabled,
+  required,
   onValueChange,
   readOnly = false,
 }: TextFieldNumberProps) {
@@ -39,6 +40,7 @@ export default function TextFieldNumber({
       inputMode="decimal"
       thousandSeparator
       size={size}
+      required={required}
       allowNegative={false}
       decimalScale={2}
       InputProps={{

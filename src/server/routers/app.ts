@@ -1,3 +1,4 @@
+import { roleRouter } from "./role";
 import { salesOrderRouter } from "./salesOrder";
 import { taxRouter } from "./tax";
 import { serviceRouter } from "./service";
@@ -22,6 +23,8 @@ import { authRouter } from "./auth";
 import { portRouter } from "./port";
 import { orgRouter } from "./org";
 import { customerRouter } from "./customer";
+import { goodsReleaseOrderRouter } from "./goodsRelease";
+import { salesDeliveryRouter } from "./salesDelivery";
 
 /**
  * Create your application's root router
@@ -41,6 +44,7 @@ export const appRouter = createRouter()
   .merge("customer.", customerRouter)
   .merge("customerGroup.", customerGroupRouter)
   .merge("currency.", currencyRouter)
+  .merge("goodsReleaseOrder.", goodsReleaseOrderRouter)
   .merge("org.", orgRouter)
   .merge("port.", portRouter)
   .merge("product.", productRouter)
@@ -50,8 +54,10 @@ export const appRouter = createRouter()
   .merge("supplier.", supplierRouter)
   .merge("salesQuote.", salesQuoteRouter)
   .merge("salesOrder.", salesOrderRouter)
+  .merge("salesDelivery.", salesDeliveryRouter)
   .merge("unit.", unitRouter)
   .merge("user.", userRouter)
+  .merge("role.", roleRouter)
   .merge("profile.", profileRouter)
   .merge("service.", serviceRouter)
   .merge("truck.", truckRouter)

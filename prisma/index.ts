@@ -1,4 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import Prisma from "@prisma/client";
+
+//@ts-ignore
+Prisma.Decimal.prototype.toJSON = function () {
+  return this.toNumber();
+};
 
 const prismaGlobal = global as typeof global & {
   prisma?: PrismaClient;

@@ -42,14 +42,27 @@ export default function ProfilePage() {
     <MainLayout>
       <Typography variant="h4">My Profile</Typography>
       <Grid container mt={2} gap={2}>
-        <TextField disabled value={data?.data?.name} label="Nama" fullWidth />
+        <TextField
+          disabled
+          value={data?.data?.name}
+          label="Nama"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+        />
 
-        <TextField disabled value={data?.data?.email} label="Email" fullWidth />
+        <TextField
+          disabled
+          value={data?.data?.email}
+          label="Email"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+        />
         <TextField
           disabled
           value={data?.data?.username}
           label="Username"
           fullWidth
+          InputLabelProps={{ shrink: true }}
         />
       </Grid>
 

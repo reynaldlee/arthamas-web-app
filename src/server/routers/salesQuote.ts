@@ -15,7 +15,7 @@ export const salesQuoteItemSchema = z.object({
   productCode: productSchema.shape.productCode,
   packagingCode: packagingSchema.shape.packagingCode,
   desc: z.string().optional(),
-  qty: z.number().transform((value) => new Prisma.Decimal(value)),
+  qty: z.number(),
   unitCode: z.string(),
   unitQty: z.number(),
   totalUnitQty: z.number(),
@@ -34,8 +34,8 @@ export const salesQuoteSchema = z.object({
   customerCode: z.string(),
   currencyCode: z.string(),
   portCode: z.string(),
-  date: z.string(),
-  validUntil: z.string(),
+  date: z.date(),
+  validUntil: z.date(),
   vesselCode: z.string(),
   exchangeRate: z.number(),
   warehouseCode: z.string(),
@@ -60,6 +60,9 @@ export const salesQuoteRouter = createProtectedRouter()
         include: {
           customer: { select: { name: true } },
           vessel: { select: { name: true } },
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       });
 
@@ -90,24 +93,23 @@ export const salesQuoteRouter = createProtectedRouter()
       const { salesQuoteItems, salesQuoteServices, ...salesQuote } = input;
       const docNo = generateDocNo("SQ-");
 
-      console.log(input);
-
       const data = await prisma.salesQuote.create({
         data: {
           docNo: docNo,
           ...salesQuote,
-          date: new Date(input.date),
-          validUntil: new Date(input.validUntil),
+          date: input.date,
+          validUntil: input.validUntil,
           status: "Open",
           orgCode: ctx.user.orgCode,
+          taxRate: input.taxRate,
           salesQuoteItems: {
             createMany: {
-              data: salesQuoteItems as any,
+              data: salesQuoteItems,
             },
           },
           salesQuoteServices: {
             createMany: {
-              data: salesQuoteServices as any,
+              data: salesQuoteServices,
             },
           },
           createdBy: ctx.user.username,
@@ -131,12 +133,14 @@ export const salesQuoteRouter = createProtectedRouter()
         await prisma.salesQuoteItem.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 
         await prisma.salesQuoteItem.createMany({
           data: salesQuoteItems.map((item) => ({
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
             ...item,
           })) as any,
         });
@@ -144,12 +148,14 @@ export const salesQuoteRouter = createProtectedRouter()
         await prisma.salesQuoteService.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 
-        await prisma.salesQuoteItem.createMany({
+        await prisma.salesQuoteService.createMany({
           data: salesQuoteServices.map((item) => ({
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
             ...item,
           })) as any,
         });
@@ -167,19 +173,24 @@ export const salesQuoteRouter = createProtectedRouter()
 
       return { data };
     },
-  });
-// .mutation("delete", {
-//   input: z.string(),
-//   resolve: async ({ input, ctx }) => {
-//     const data = await prisma.product.delete({
-//       where: {
-//         productCode_orgCode: {
-//           productCode: input,
-//           orgCode: ctx.user.orgCode,
-//         },
-//       },
-//     });
+  })
+  .mutation("cancel", {
+    input: z.string(),
+    resolve: async ({ input, ctx }) => {
+      const data = await prisma.salesQuote.update({
+        data: {
+          status: "Cancelled",
+          cancelledBy: ctx.user.username,
+          cancelledAt: new Date(),
+        },
+        where: {
+          docNo_orgCode: {
+            docNo: input,
+            orgCode: ctx.user.orgCode,
+          },
+        },
+      });
 
-//     return { data };
-//   },
-// });
+      return { data };
+    },
+  });

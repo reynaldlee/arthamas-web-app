@@ -2,37 +2,32 @@ import { useId } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 import { LoaderModal } from "@/components/Loader";
-import Link from "next/link";
-import {
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  Paper,
-  Typography,
-} from "@mui/material";
 
 import ActiveIcon from "@mui/icons-material/AllOutSharp";
-import ExpiredTodayIcon from "@mui/icons-material/TimerOff";
-import Expired7DayIcon from "@mui/icons-material/Timelapse";
+import DeliveryToday from "@mui/icons-material/Today";
+import DeliveryIn7Days from "@mui/icons-material/LocalShipping";
 
-import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
-import { formatDate, formatMoney } from "@/utils/format";
+import { formatDate } from "@/utils/format";
 import StatusBadge from "@/components/Badges/StatusBadge";
 import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
+import { Box, Grid, Paper, Typography } from "@mui/material";
 
-export default function SalesQuoteIndex() {
-  const { data, isLoading, refetch } = trpc.useQuery(["salesQuote.findAll"]);
+export default function Sp2bCreate() {
+  const { data, isLoading, refetch } = trpc.useQuery([
+    "goodsReleaseOrder.findAll",
+  ]);
   const tableId = useId();
   const router = useRouter();
 
-  const cancelQuotation = trpc.useMutation(["salesQuote.cancel"]);
+  const cancelGoodsReleaseOrder = trpc.useMutation([
+    "goodsReleaseOrder.cancel",
+  ]);
 
   const handleCancel = (docNo: string) => {
-    if (window.confirm(`Are you sure you want to cancel quotation ${docNo}`)) {
-      cancelQuotation.mutate(docNo, {
+    if (window.confirm(`Are you sure you want to cancel SP2B ${docNo}`)) {
+      cancelGoodsReleaseOrder.mutate(docNo, {
         onError: (error) => {
           console.error(error);
         },
@@ -45,7 +40,7 @@ export default function SalesQuoteIndex() {
 
   return (
     <MainLayout>
-      <Box>
+      <Box sx={{ mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item md={4}>
             <Paper sx={{ p: 2 }}>
@@ -66,10 +61,10 @@ export default function SalesQuoteIndex() {
             <Paper sx={{ p: 2 }}>
               <Grid container alignItems="center" spacing={2}>
                 <Grid item>
-                  <ExpiredTodayIcon fontSize="large" />
+                  <DeliveryToday fontSize="large" />
                 </Grid>
                 <Grid item>
-                  <Typography variant="overline">Expired Today</Typography>
+                  <Typography variant="overline">Delivery Today</Typography>
                   <Box>
                     <Typography variant="h2">1</Typography>
                   </Box>
@@ -82,10 +77,10 @@ export default function SalesQuoteIndex() {
             <Paper sx={{ p: 2 }}>
               <Grid container alignItems="center" spacing={2}>
                 <Grid item>
-                  <Expired7DayIcon fontSize="large" />
+                  <DeliveryIn7Days fontSize="large" />
                 </Grid>
                 <Grid item>
-                  <Typography variant="overline">Expired In 7 days</Typography>
+                  <Typography variant="overline">Delivery In 7 days</Typography>
                   <Box>
                     <Typography variant="h2">5</Typography>
                   </Box>
@@ -96,16 +91,8 @@ export default function SalesQuoteIndex() {
         </Grid>
       </Box>
 
-      <Box p={2}>
-        <Link href="/sales/quotes/create">
-          <Button variant="contained" startIcon={<Add />}>
-            Create Sales Quote
-          </Button>
-        </Link>
-      </Box>
-
       <MUIDataTable
-        title="Sales Quotes"
+        title="List SP2B"
         options={{
           tableId: tableId,
           selectableRowsHideCheckboxes: true,
@@ -113,10 +100,14 @@ export default function SalesQuoteIndex() {
         columns={[
           { label: "Doc No", name: "docNo" },
           {
-            label: "Customer",
-            name: "customer",
+            label: "Sales Order No",
+            name: "salesOrderDocNo",
+          },
+          {
+            label: "Delivery Date",
+            name: "deliveryDate",
             options: {
-              customBodyRender: (customer) => customer.name,
+              customBodyRender: formatDate,
             },
           },
           {
@@ -129,28 +120,21 @@ export default function SalesQuoteIndex() {
             },
           },
           {
-            label: "Quotation Date",
-            name: "date",
+            label: "Customer",
+            name: "salesOrder",
             options: {
-              customBodyRender: formatDate,
+              customBodyRender: (data) => {
+                return data.customer.name;
+              },
             },
           },
           {
-            label: "Valid Until",
-            name: "validUntil",
+            label: "Warehouse",
+            name: "warehouse",
             options: {
-              customBodyRender: formatDate,
-            },
-          },
-          {
-            label: "Currency",
-            name: "currencyCode",
-          },
-          {
-            label: "Amount",
-            name: "totalAmount",
-            options: {
-              customBodyRender: (value) => formatMoney(value),
+              customBodyRender: (data) => {
+                return data.name;
+              },
             },
           },
           {
@@ -166,19 +150,17 @@ export default function SalesQuoteIndex() {
                       actions={[
                         {
                           label: "Edit",
-                          onClick: () =>
-                            router.push(`/sales/quotes/${id}/edit`),
+                          onClick: () => router.push(`/sales/sp2b/${id}/edit`),
                         },
                         {
-                          label: "Print Quotation",
-                          onClick: () =>
-                            router.push(`/sales/quotes/${id}/print`),
+                          label: "Print SP2B",
+                          onClick: () => router.push(`/sales/sp2b/${id}/print`),
                         },
                         {
-                          label: "Create Sales Order",
+                          label: "Create Delivery",
                           onClick: () =>
                             router.push(
-                              `/sales/orders/create?salesQuoteDocNo=${id}`
+                              `/sales/deliveries/create?goodsReleaseOrderDocNo=${id}`
                             ),
                         },
                         {

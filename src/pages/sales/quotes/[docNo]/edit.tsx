@@ -52,11 +52,7 @@ export default function SalesQuotesEdit() {
   });
 
   const { register, watch, setValue, handleSubmit, control, reset } =
-    useForm<SalesQuoteFormValues>({
-      defaultValues: {
-        customerCode: "INDOBARUNA",
-      },
-    });
+    useForm<SalesQuoteFormValues>();
 
   const customerList = trpc.useQuery(["customer.findAll"]);
   const currencyList = trpc.useQuery(["currency.findAll"]);
@@ -86,16 +82,11 @@ export default function SalesQuotesEdit() {
     },
   });
 
-  // useEffect(() => {
-  //   if (salesQuote?.data) {
-  //     reset(salesQuote.data as any);
-  //   }
-  // }, [salesQuote, reset]);
-
-  console.log(watch("customerCode"));
-
-  // const [productItems, setProductItems] = useState<ProductItemOption[]>([]);
-  // const [serviceItems, setServiceItems] = useState([]);
+  useEffect(() => {
+    if (salesQuote?.data) {
+      reset(salesQuote.data as any);
+    }
+  }, [salesQuote, reset]);
 
   const salesQuoteItems = useFieldArray({
     name: "salesQuoteItems",
@@ -106,9 +97,6 @@ export default function SalesQuotesEdit() {
     name: "salesQuoteServices",
     control: control,
   });
-
-  // const [salesQuoteItems, setSalesQuoteItems] = useState([]);
-  // const [salesQuoteServices, setSalesQuoteServices] = useState([]);
 
   const selectedCustomer = trpc.useQuery(
     ["customer.find", selectedCustomerCode],
@@ -122,8 +110,10 @@ export default function SalesQuotesEdit() {
   };
 
   const onSubmit = (data: SalesQuoteFormValues) => {
-    console.log(data);
-    // createSalesQuote.mutate(data);
+    createSalesQuote.mutate({
+      docNo: salesQuote?.data?.docNo,
+      fields: data,
+    });
   };
 
   const handleAddMoreProduct = () => {
@@ -198,9 +188,13 @@ export default function SalesQuotesEdit() {
   const calculateTotalAmount = () => {
     const totalProduct = watch("totalProduct") || 0;
     const totalService = watch("totalService") || 0;
-    const taxAmount = watch("taxAmount") || 0;
+    const taxRate = watch("taxRate") || 0;
 
-    setValue("totalBeforeTax", totalProduct + totalService);
+    const totalBeforeTax = totalProduct + totalService;
+    const taxAmount = totalBeforeTax * taxRate;
+
+    setValue("totalBeforeTax", totalBeforeTax);
+    setValue("taxAmount", taxAmount);
     setValue("totalAmount", totalProduct + totalService + taxAmount);
   };
 
@@ -296,7 +290,7 @@ export default function SalesQuotesEdit() {
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
               <TextField
-                {...register("date")}
+                {...register("date", { valueAsDate: true })}
                 type="date"
                 InputLabelProps={{
                   shrink: true,
@@ -308,11 +302,11 @@ export default function SalesQuotesEdit() {
             </Grid>
             <Grid item md={4} xs={12}>
               <TextField
+                {...register("validUntil", { valueAsDate: true })}
                 type="date"
                 InputLabelProps={{
                   shrink: true,
                 }}
-                {...register("validUntil")}
                 fullWidth
                 defaultValue={format(
                   addDays(new Date(), selectedCustomer.data?.data?.top || 30),
@@ -771,10 +765,6 @@ export default function SalesQuotesEdit() {
                     onChange={(_, value) => {
                       setValue("taxCode", value.taxCode);
                       setValue("taxRate", value.taxRate);
-                      setValue(
-                        "taxAmount",
-                        value.taxRate * watch("totalService")
-                      );
                       calculateTotalAmount();
                     }}
                     disableClearable
