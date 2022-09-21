@@ -268,6 +268,11 @@ export default function SalesQuotesCreate() {
                 calculateServicesAmount();
               }}
             ></TextFieldNumber>
+            <Box>
+              <a href="#">
+                <strong>Get Rate from Bank Indonesia</strong>
+              </a>
+            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -410,17 +415,9 @@ export default function SalesQuotesCreate() {
                           }
                           getOptionLabel={(option) => option.name}
                           onChange={(_, value) => {
-                            // setProductItems((state) => {
-                            //   const newState = [...state];
-                            //   newState[index] = {
-                            //     ...newState[index],
-                            //     packagings: value.packagings,
-                            //   };
-                            //   return newState;
-                            // });
-
                             salesQuoteItems.update(index, {
                               ...salesQuoteItems.fields[index],
+                              desc: value.productType?.name,
                               productCode: value.productCode,
                               unitPrice: value.productPrices[0]?.unitPrice || 0,
                               qty: 1,
@@ -442,6 +439,7 @@ export default function SalesQuotesCreate() {
                           multiline
                           size="small"
                           placeholder="Description"
+                          value={watch(`salesQuoteItems.${index}.desc`)}
                           {...register(`salesQuoteItems.${index}.desc`)}
                         />
                       </TableCell>

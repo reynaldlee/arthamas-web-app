@@ -131,12 +131,12 @@ export const salesOrderRouter = createProtectedRouter()
             orgCode: ctx.user.orgCode,
             salesOrderItems: {
               createMany: {
-                data: salesOrderItems as any,
+                data: salesOrderItems,
               },
             },
             salesOrderServices: {
               createMany: {
-                data: salesOrderServices as any,
+                data: salesOrderServices,
               },
             },
             createdBy: ctx.user.username,
@@ -167,6 +167,7 @@ export const salesOrderRouter = createProtectedRouter()
         await prisma.salesOrderItem.createMany({
           data: salesOrderItems.map((item) => ({
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
             ...item,
           })) as any,
         });
@@ -177,9 +178,10 @@ export const salesOrderRouter = createProtectedRouter()
           },
         });
 
-        await prisma.salesOrderItem.createMany({
+        await prisma.salesOrderService.createMany({
           data: salesOrderServices.map((item) => ({
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
             ...item,
           })) as any,
         });

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";

@@ -5,12 +5,17 @@ import { AppRouter } from "./api/trpc/[trpc]";
 import superjson from "superjson";
 import ThemeProviderWrapper from "src/theme/ThemeProvider";
 import { AuthProvider } from "src/context/AuthContext";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { id } from "date-fns/locale";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <ThemeProviderWrapper>
       <AuthProvider>
-        <Component {...pageProps} />
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={id}>
+          <Component {...pageProps} />
+        </LocalizationProvider>
       </AuthProvider>
     </ThemeProviderWrapper>
   );

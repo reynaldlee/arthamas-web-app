@@ -1,7 +1,7 @@
 import { format } from "date-fns";
 import numeral from "numeral";
 
-export const formatDate = (date?: Date) => {
+export const formatDate = (date: Date | undefined | null) => {
   if (date) {
     return format(date, "dd MMM yyyy");
   }

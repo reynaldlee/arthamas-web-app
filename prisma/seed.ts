@@ -1,3 +1,5 @@
+import { bankAccountData } from "./seedData/bankAccount";
+import { truckData } from "./seedData/truck";
 import { unitData } from "./seedData/unit";
 import { currencyData } from "./seedData/currency";
 import { vesselData, vesselProductData } from "./seedData/vessel";
@@ -98,6 +100,11 @@ async function main() {
     data: portData,
   });
 
+  await prisma.bankAccount.createMany({
+    skipDuplicates: true,
+    data: bankAccountData,
+  });
+
   await prisma.unit.createMany({
     skipDuplicates: true,
     data: unitData,
@@ -131,6 +138,11 @@ async function main() {
   await prisma.warehouse.createMany({
     skipDuplicates: true,
     data: warehouseData,
+  });
+
+  await prisma.truck.createMany({
+    skipDuplicates: true,
+    data: truckData,
   });
 
   await prisma.tax.createMany({

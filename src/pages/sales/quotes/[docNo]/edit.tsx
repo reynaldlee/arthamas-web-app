@@ -36,6 +36,7 @@ import { salesQuoteSchema } from "src/server/routers/salesQuote";
 import { pick } from "lodash";
 import { addDays, format } from "date-fns";
 import { Prisma } from "@prisma/client";
+import { DatePicker } from "@mui/x-date-pickers";
 
 type SalesQuoteFormValues = z.infer<typeof salesQuoteSchema>;
 
@@ -236,6 +237,12 @@ export default function SalesQuotesEdit() {
               options={(customerList.data?.data || []).map((item) =>
                 pick(item, ["customerCode", "name"])
               )}
+              value={pick(
+                customerList.data?.data.find((item) => {
+                  return item.customerCode === selectedCustomerCode;
+                }),
+                ["customerCode", "name"]
+              )}
               onChange={(_, value) => {
                 setValue("customerCode", value.customerCode, {
                   shouldDirty: true,
@@ -281,6 +288,11 @@ export default function SalesQuotesEdit() {
                 calculateServicesAmount();
               }}
             ></TextFieldNumber>
+            <Box>
+              <a href="#">
+                <strong>Get Rate from Bank Indonesia</strong>
+              </a>
+            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -289,31 +301,24 @@ export default function SalesQuotesEdit() {
         <>
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
-              <TextField
-                {...register("date", { valueAsDate: true })}
-                type="date"
-                InputLabelProps={{
-                  shrink: true,
+              <DatePicker
+                onChange={(value) => {
+                  setValue("date", value!);
                 }}
-                fullWidth
-                defaultValue={format(new Date(), "yyyy-MM-dd")}
                 label="Transaction Date"
-              ></TextField>
+                value={watch("date")}
+                renderInput={(params) => <TextField {...params} required />}
+              />
             </Grid>
             <Grid item md={4} xs={12}>
-              <TextField
-                {...register("validUntil", { valueAsDate: true })}
-                type="date"
-                InputLabelProps={{
-                  shrink: true,
+              <DatePicker
+                onChange={(value) => {
+                  setValue("validUntil", value!);
                 }}
-                fullWidth
-                defaultValue={format(
-                  addDays(new Date(), selectedCustomer.data?.data?.top || 30),
-                  "yyyy-MM-dd"
-                )}
                 label="Quotation Valid Until"
-              ></TextField>
+                value={watch("validUntil")}
+                renderInput={(params) => <TextField {...params} required />}
+              />
             </Grid>
           </Grid>
           <Grid container gap={2} sx={{ pt: 2 }}>
@@ -340,6 +345,14 @@ export default function SalesQuotesEdit() {
                 renderInput={(params) => (
                   <TextField {...params} label="Ship to Port" />
                 )}
+                value={
+                  portList.data?.data
+                    .filter((item) => item.portCode === selectedPortCode)
+                    .map((item) => ({ id: item.portCode, label: item.name }))[0]
+                }
+                renderInput={(params) => (
+                  <TextField {...params} label="Ship to Port" />
+                )}
               />
             </Grid>
             <Grid item md={4} xs={12}>
@@ -362,6 +375,12 @@ export default function SalesQuotesEdit() {
                 renderInput={(params) => (
                   <TextField {...params} label="Vessel" />
                 )}
+                value={pick(
+                  selectedCustomer.data?.data?.vessels.find(
+                    (item) => item.vesselCode === selectedVesselCode
+                  ),
+                  ["vesselCode", "name"]
+                )}
               />
             </Grid>
           </Grid>
@@ -379,6 +398,12 @@ export default function SalesQuotesEdit() {
                     shouldValidate: true,
                   });
                 }}
+                value={pick(
+                  (warehouseList.data?.data || []).find(
+                    (item) => item.warehouseCode === watch("warehouseCode")
+                  ),
+                  ["warehouseCode", "name"]
+                )}
                 getOptionLabel={(option) => option.name}
                 isOptionEqualToValue={(opt, value) =>
                   opt.warehouseCode === value.warehouseCode
@@ -421,17 +446,16 @@ export default function SalesQuotesEdit() {
                           isOptionEqualToValue={(opt, value) =>
                             opt.productCode === value.productCode
                           }
+                          value={pick(
+                            productList.data?.data?.find(
+                              (item) =>
+                                item.productCode ===
+                                watch(`salesQuoteItems.${index}.productCode`)
+                            ),
+                            ["productCode", "name"]
+                          )}
                           getOptionLabel={(option) => option.name}
                           onChange={(_, value) => {
-                            // setProductItems((state) => {
-                            //   const newState = [...state];
-                            //   newState[index] = {
-                            //     ...newState[index],
-                            //     packagings: value.packagings,
-                            //   };
-                            //   return newState;
-                            // });
-
                             salesQuoteItems.update(index, {
                               ...salesQuoteItems.fields[index],
                               productCode: value.productCode,
@@ -472,17 +496,6 @@ export default function SalesQuotesEdit() {
                             placeholder="Qty"
                             value={watch(`salesQuoteItems.${index}.qty`)}
                           />
-                          {/* <Tooltip
-                            color={
-                              item.quantity > item.stock ? "error" : "info"
-                            }
-                            title={`Stock: ${item.stock}`}
-                            sx={{
-                              visibility: item.id ? "visible" : "hidden",
-                            }}
-                          >
-                            <InfoTwoTone></InfoTwoTone>
-                          </Tooltip> */}
                         </Box>
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -649,6 +662,11 @@ export default function SalesQuotesEdit() {
                             );
                             calculateServiceAmount(index);
                           }}
+                          value={(serviceList.data?.data || []).find(
+                            (item) =>
+                              item.serviceCode ===
+                              watch(`salesQuoteServices.${index}.serviceCode`)
+                          )}
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -767,6 +785,9 @@ export default function SalesQuotesEdit() {
                       setValue("taxRate", value.taxRate);
                       calculateTotalAmount();
                     }}
+                    value={(taxList.data?.data || []).find(
+                      (item) => item.taxCode === watch("taxCode")
+                    )}
                     disableClearable
                     getOptionLabel={(option) => option.name}
                     isOptionEqualToValue={(opt, value) =>

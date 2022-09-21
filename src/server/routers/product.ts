@@ -6,6 +6,13 @@ import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 import { productCategorySchema } from "./productCategory";
 
+export const productPackagingSchema = z.object({
+  productCode: z.string(),
+  packagingCode: z.string(),
+  unitCode: z.string(),
+  unitQty: z.number(),
+});
+
 export const productSchema = z.object({
   productCode: z.string().max(20),
   name: z.string().max(40),
@@ -32,6 +39,7 @@ export const productRouter = createProtectedRouter()
           productCategory: true,
           productType: true,
           productGrade: true,
+          packagings: true,
         },
       });
       return { data };
@@ -51,6 +59,25 @@ export const productRouter = createProtectedRouter()
           productCategory: true,
           productType: true,
           productGrade: true,
+          packagings: true,
+        },
+      });
+      return { data };
+    },
+  })
+  .query("findProductPrices", {
+    input: productSchema.shape.productCode,
+    resolve: async ({ ctx, input }) => {
+      const data = await prisma.productPrices.findMany({
+        where: {
+          productCode: input,
+          orgCode: ctx.user.orgCode,
+        },
+        include: {
+          product: true,
+          customer: true,
+          port: true,
+          currency: true,
         },
       });
       return { data };
@@ -62,22 +89,6 @@ export const productRouter = createProtectedRouter()
       portCode: z.string(),
     }),
     resolve: async ({ ctx, input }) => {
-      console.log(input);
-      // console.log(
-      //   await prisma.productPrices.findMany({
-      //     where: {
-      //       customer: {
-      //         vessels: {
-      //           some: {
-      //             vesselCode: input.vesselCode,
-      //           },
-      //         },
-      //       },
-      //       portCode: input.portCode,
-      //     },
-      //   })
-      // );
-
       const data = await prisma.product.findMany({
         where: {
           orgCode: ctx.user.orgCode,
@@ -106,18 +117,6 @@ export const productRouter = createProtectedRouter()
               },
             },
           },
-
-          // productPrices: {
-          //   where: {
-          //     customer: {
-          //       vessels: {
-          //         some: {
-          //           vesselCode: input,
-          //         },
-          //       },
-          //     },
-          //   },
-          // },
         },
       });
 
@@ -171,6 +170,21 @@ export const productRouter = createProtectedRouter()
             productCode: input,
             orgCode: ctx.user.orgCode,
           },
+        },
+      });
+
+      return { data };
+    },
+  })
+  .mutation("addPackaging", {
+    input: productPackagingSchema,
+    resolve: async ({ input, ctx }) => {
+      const data = await prisma.productPackaging.create({
+        data: {
+          ...input,
+          orgCode: ctx.user.orgCode,
+          createdBy: ctx.user.username,
+          updatedBy: ctx.user.username,
         },
       });
 

@@ -31,16 +31,26 @@ import { z } from "zod";
 
 import { format } from "date-fns";
 import { goodsReleaseOrderSchema } from "src/server/routers/goodsRelease";
+import { DatePicker } from "@mui/x-date-pickers";
 
 type GoodsReleaseOrderFormValues = z.infer<typeof goodsReleaseOrderSchema>;
 
 type QueryParams = {
-  salesOrderDocNo?: string;
+  docNo: string;
 };
 
 export default function Sp2bEdit() {
   const router = useRouter();
-  const { salesOrderDocNo } = router.query as QueryParams;
+  const { docNo } = router.query as QueryParams;
+
+  const goodsReleaseOrder = trpc.useQuery(["goodsReleaseOrder.find", docNo]);
+
+  const salesOrder = trpc.useQuery(
+    ["salesOrder.find", goodsReleaseOrder.data?.data?.salesOrderDocNo],
+    { enabled: !!goodsReleaseOrder.data }
+  );
+
+  const salesOrderDocNo = salesOrder.data?.data?.docNo;
 
   const { register, watch, setValue, getValues, handleSubmit, control, reset } =
     useForm<GoodsReleaseOrderFormValues>();
@@ -50,10 +60,6 @@ export default function Sp2bEdit() {
     name: "goodsReleaseOrderItems",
   });
 
-  const salesOrder = trpc.useQuery(["salesOrder.find", salesOrderDocNo!], {
-    enabled: !!salesOrderDocNo,
-  });
-
   const warehouseList = trpc.useQuery(["warehouse.findAll"]);
 
   const [selectedWarehouse, setSelectedWarehouse] = useState<{
@@ -61,8 +67,8 @@ export default function Sp2bEdit() {
     label: string;
   }>({ id: "", label: "" });
 
-  const createGoodsReleaseOrder = trpc.useMutation(
-    ["goodsReleaseOrder.create"],
+  const updateGoodsReleaseOrder = trpc.useMutation(
+    ["goodsReleaseOrder.update"],
     {
       onError: (err) => {
         console.log(err);
@@ -74,14 +80,14 @@ export default function Sp2bEdit() {
   );
 
   useEffect(() => {
-    if (salesOrder.data) {
+    if (goodsReleaseOrder.data) {
       setSelectedWarehouse({
-        id: salesOrder.data.data?.warehouse.warehouseCode!,
-        label: salesOrder.data.data?.warehouse.name!,
+        id: salesOrder.data?.data?.warehouse.warehouseCode!,
+        label: salesOrder.data?.data?.warehouse.name!,
       });
 
       goodsReleaseOrderItems.replace(
-        salesOrder.data.data?.salesOrderItems.map((item) => ({
+        goodsReleaseOrder.data?.data?.goodsReleaseOrderItems.map((item) => ({
           lineNo: item.lineNo,
           packagingCode: item.packagingCode,
           productCode: item.productCode,
@@ -89,14 +95,15 @@ export default function Sp2bEdit() {
           unitCode: item.unitCode,
           totalUnitQty: item.totalUnitQty,
           unitQty: item.unitQty,
-          salesOrderItemDocNo: item.docNo,
-          salesOrderItemLineNo: item.lineNo,
+          salesOrderItemLineNo: item.salesOrderItemLineNo,
+          salesOrderItemDocNo: item.salesOrderItemDocNo,
         }))
       );
 
       reset({
         ...getValues(),
-        warehouseCode: salesOrder.data.data?.warehouseCode,
+        ...goodsReleaseOrder.data.data,
+        warehouseCode: salesOrder.data?.data?.warehouseCode,
       });
     }
   }, [salesOrder.data, reset, getValues]);
@@ -108,13 +115,17 @@ export default function Sp2bEdit() {
   };
 
   const onSubmit = (data: GoodsReleaseOrderFormValues) => {
-    createGoodsReleaseOrder.mutate(data);
+    updateGoodsReleaseOrder.mutate({
+      docNo: docNo,
+      fields: data,
+    });
   };
 
   return (
     <MainLayout>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3">Create SP2B</Typography>
+        <Typography variant="h3">Edit SP2B</Typography>
+        {docNo}
       </Box>
 
       <Paper sx={{ p: 2 }}>
@@ -139,15 +150,13 @@ export default function Sp2bEdit() {
           </Grid>
 
           <Grid item md={2} xs={6}>
-            <TextField
-              {...register("deliveryDate")}
-              type="date"
-              InputLabelProps={{
-                shrink: true,
+            <DatePicker
+              onChange={(value) => {
+                setValue("deliveryDate", value!);
               }}
-              fullWidth
-              defaultValue={format(new Date(), "yyyy-MM-dd")}
               label="Delivery Date"
+              value={watch("deliveryDate")}
+              renderInput={(params) => <TextField {...params} required />}
             />
           </Grid>
         </Grid>
@@ -195,8 +204,7 @@ export default function Sp2bEdit() {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{ minWidth: 250 }}>Product</TableCell>
-                  {/* <TableCell sx={{ minWidth: 50 }}>Description</TableCell> */}
-                  <TableCell sx={{ minWidth: 70 }}>Qty Order</TableCell>
+                  <TableCell sx={{ minWidth: 70 }}>Qty</TableCell>
                   <TableCell sx={{ minWidth: 120 }}>Qty Deliver</TableCell>
                   <TableCell sx={{ minWidth: 50 }}>Packaging</TableCell>
                   <TableCell sx={{ minWidth: 100 }}>Volume</TableCell>
@@ -219,12 +227,16 @@ export default function Sp2bEdit() {
                         size="small"
                         placeholder="Delivery Qty"
                         onValueChange={(value) => {
-                          setValue(
-                            `goodsReleaseOrderItems.${index}.qty`,
-                            value
-                          );
+                          goodsReleaseOrderItems.update(index, {
+                            ...item,
+                            salesOrderItemLineNo: item.lineNo,
+                            salesOrderItemDocNo: item.docNo,
+                            qty: value,
+                          });
                         }}
-                        value={watch(`goodsReleaseOrderItems.${index}.qty`)}
+                        value={
+                          watch(`goodsReleaseOrderItems.${index}.qty`) || 0
+                        }
                       />
                     </TableCell>
                     <TableCell sx={{ padding: 0.5 }}>
@@ -239,10 +251,8 @@ export default function Sp2bEdit() {
 
                     <TableCell sx={{ padding: 0.5 }}>
                       <Typography fullWidth size="small" disabled>
-                        {watch(`goodsReleaseOrderItems.${index}.qty`) *
-                          item.unitQty +
-                          " " +
-                          item.unitCode}
+                        {watch(`goodsReleaseOrderItems.${index}.qty`) ||
+                          0 * item.unitQty + " " + item.unitCode}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -260,6 +270,9 @@ export default function Sp2bEdit() {
               multiline
               rows={4}
               fullWidth
+              InputLabelProps={{
+                shrink: true,
+              }}
               {...register("memo")}
             ></TextField>
           </Grid>
@@ -276,7 +289,7 @@ export default function Sp2bEdit() {
               variant="contained"
               color="error"
               onClick={handleCancel}
-              disabled={createGoodsReleaseOrder.isLoading}
+              disabled={updateGoodsReleaseOrder.isLoading}
             >
               Cancel
             </Button>
@@ -284,11 +297,11 @@ export default function Sp2bEdit() {
           <Grid item>
             <Button
               variant="contained"
-              disabled={createGoodsReleaseOrder.isLoading}
+              disabled={updateGoodsReleaseOrder.isLoading}
               startIcon={<SaveAltOutlinedIcon />}
               onClick={handleSubmit(onSubmit)}
             >
-              Submit
+              Edit
             </Button>
           </Grid>
         </Grid>

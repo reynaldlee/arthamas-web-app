@@ -41,7 +41,23 @@ export default function VesselIndex() {
           selectableRowsHideCheckboxes: true,
         }}
         columns={[
-          { label: "Vessel Code", name: "vesselCode" },
+          {
+            label: "Vessel Code",
+            name: "vesselCode",
+            options: {
+              customBodyRender: (id) => {
+                return (
+                  <Link href={`/management/vessels/${id}`}>
+                    <a>{id}</a>
+                  </Link>
+                );
+              },
+            },
+          },
+          {
+            label: "Vessel Name",
+            name: "name",
+          },
           { label: "IMO No", name: "imoNumber" },
           {
             label: "Customer",

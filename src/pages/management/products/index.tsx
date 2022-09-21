@@ -1,4 +1,4 @@
-import { ReactElement, useId } from "react";
+import { useId } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 import { LoaderModal } from "@/components/Loader";
@@ -42,7 +42,19 @@ export default function ProductIndex() {
           // selectableRowsHideCheckboxes: true,
         }}
         columns={[
-          { label: "Product Code", name: "productCode" },
+          {
+            label: "Product Code",
+            name: "productCode",
+            options: {
+              customBodyRender: (productCode) => {
+                return (
+                  <Link href={`/management/products/${productCode}`}>
+                    <a>{productCode}</a>
+                  </Link>
+                );
+              },
+            },
+          },
           { label: "Product Name", name: "name" },
           { label: "NPT No", name: "nptNumber" },
           {
@@ -81,11 +93,11 @@ export default function ProductIndex() {
                 const id = data.rowData[0];
                 return (
                   <>
-                    <Link href={`/management/products/${id}/edit`}>
+                    {/* <Link href={`/management/products/${id}/edit`}>
                       <IconButton>
                         <EditIcon></EditIcon>
                       </IconButton>
-                    </Link>
+                    </Link> */}
 
                     <IconButton onClick={handleDelete(id)} disabled>
                       <DeleteOutlineOutlinedIcon />

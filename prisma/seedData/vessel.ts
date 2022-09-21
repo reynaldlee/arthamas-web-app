@@ -46,7 +46,7 @@ export const vesselProductData: Prisma.VesselProductCreateManyInput[] = [
   },
   {
     vesselCode: "PERKASA",
-    productCode: "ATI3030",
+    productCode: "AMD3005",
     orgCode: "ASM",
   },
   {

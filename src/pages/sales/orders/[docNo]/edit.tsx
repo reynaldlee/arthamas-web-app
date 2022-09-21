@@ -37,6 +37,7 @@ import { pick } from "lodash";
 import { addDays, format } from "date-fns";
 import { salesOrderSchema } from "src/server/routers/salesOrder";
 import { SalesOrderItem, SalesOrderService } from "@prisma/client";
+import { DatePicker } from "@mui/x-date-pickers";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderSchema>;
 type QueryParam = {
@@ -252,6 +253,12 @@ export default function SalesOrderEdit() {
               options={(customerList.data?.data || []).map((item) =>
                 pick(item, ["customerCode", "name"])
               )}
+              value={pick(
+                customerList.data?.data.find((item) => {
+                  return item.customerCode === selectedCustomerCode;
+                }),
+                ["customerCode", "name"]
+              )}
               onChange={(_, value) => {
                 setValue("customerCode", value.customerCode, {
                   shouldDirty: true,
@@ -297,6 +304,11 @@ export default function SalesOrderEdit() {
                 calculateServicesAmount();
               }}
             ></TextFieldNumber>
+            <Box>
+              <a href="#">
+                <strong>Get Rate from Bank Indonesia</strong>
+              </a>
+            </Box>
           </Grid>
         </Grid>
 
@@ -309,18 +321,14 @@ export default function SalesOrderEdit() {
             />
           </Grid>
           <Grid item md={2} xs={6}>
-            <TextField
-              {...register("poDate", {
-                valueAsDate: true,
-              })}
-              type="date"
-              InputLabelProps={{
-                shrink: true,
+            <DatePicker
+              onChange={(value) => {
+                setValue("poDate", value!);
               }}
-              fullWidth
-              defaultValue={format(new Date(), "yyyy-MM-dd")}
-              label="PO Date"
-            ></TextField>
+              label="PO date"
+              value={watch("poDate")}
+              renderInput={(params) => <TextField {...params} required />}
+            />
           </Grid>
 
           <Grid item md={2} xs={6}>
@@ -340,33 +348,24 @@ export default function SalesOrderEdit() {
         <>
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
-              <TextField
-                {...register("date", {
-                  valueAsDate: true,
-                })}
-                type="date"
-                InputLabelProps={{
-                  shrink: true,
+              <DatePicker
+                onChange={(value) => {
+                  setValue("date", value!);
                 }}
-                fullWidth
-                defaultValue={format(new Date(), "yyyy-MM-dd")}
-                label="Transaction Date"
-              ></TextField>
+                label="Transaction date"
+                value={watch("date")}
+                renderInput={(params) => <TextField {...params} required />}
+              />
             </Grid>
             <Grid item md={4} xs={12}>
-              <TextField
-                type="date"
-                InputLabelProps={{
-                  shrink: true,
+              <DatePicker
+                onChange={(value) => {
+                  setValue("dueDate", value!);
                 }}
-                {...register("dueDate", { valueAsDate: true })}
-                fullWidth
-                defaultValue={format(
-                  addDays(new Date(), selectedCustomer.data?.data?.top || 30),
-                  "yyyy-MM-dd"
-                )}
-                label="Delivery Date"
-              ></TextField>
+                label="Delivery date"
+                value={watch("dueDate")}
+                renderInput={(params) => <TextField {...params} required />}
+              />
             </Grid>
           </Grid>
           <Grid container gap={2} sx={{ pt: 2 }}>
@@ -390,6 +389,11 @@ export default function SalesOrderEdit() {
                     shouldValidate: true,
                   });
                 }}
+                value={
+                  portList.data?.data
+                    .filter((item) => item.portCode === selectedPortCode)
+                    .map((item) => ({ id: item.portCode, label: item.name }))[0]
+                }
                 renderInput={(params) => (
                   <TextField {...params} label="Ship to Port" />
                 )}
@@ -415,6 +419,12 @@ export default function SalesOrderEdit() {
                 renderInput={(params) => (
                   <TextField {...params} label="Vessel" />
                 )}
+                value={pick(
+                  selectedCustomer.data?.data?.vessels.find(
+                    (item) => item.vesselCode === selectedVesselCode
+                  ),
+                  ["vesselCode", "name"]
+                )}
               />
             </Grid>
           </Grid>
@@ -436,6 +446,12 @@ export default function SalesOrderEdit() {
                 isOptionEqualToValue={(opt, value) =>
                   opt.warehouseCode === value.warehouseCode
                 }
+                value={pick(
+                  (warehouseList.data?.data || []).find(
+                    (item) => item.warehouseCode === watch("warehouseCode")
+                  ),
+                  ["warehouseCode", "name"]
+                )}
                 renderInput={(params) => (
                   <TextField {...params} label="Ship From Warehouse" />
                 )}
@@ -474,17 +490,16 @@ export default function SalesOrderEdit() {
                           isOptionEqualToValue={(opt, value) =>
                             opt.productCode === value.productCode
                           }
+                          value={pick(
+                            productList.data?.data?.find(
+                              (item) =>
+                                item.productCode ===
+                                watch(`salesOrderItems.${index}.productCode`)
+                            ),
+                            ["productCode", "name"]
+                          )}
                           getOptionLabel={(option) => option.name}
                           onChange={(_, value) => {
-                            // setProductItems((state) => {
-                            //   const newState = [...state];
-                            //   newState[index] = {
-                            //     ...newState[index],
-                            //     packagings: value.packagings,
-                            //   };
-                            //   return newState;
-                            // });
-
                             salesOrderItems.update(index, {
                               ...salesOrderItems.fields[index],
                               productCode: value.productCode,
@@ -525,17 +540,6 @@ export default function SalesOrderEdit() {
                             placeholder="Qty"
                             value={watch(`salesOrderItems.${index}.qty`)}
                           />
-                          {/* <Tooltip
-                            color={
-                              item.quantity > item.stock ? "error" : "info"
-                            }
-                            title={`Stock: ${item.stock}`}
-                            sx={{
-                              visibility: item.id ? "visible" : "hidden",
-                            }}
-                          >
-                            <InfoTwoTone></InfoTwoTone>
-                          </Tooltip> */}
                         </Box>
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -690,6 +694,11 @@ export default function SalesOrderEdit() {
                             opt.serviceCode === value.serviceCode
                           }
                           disableClearable
+                          value={(serviceList.data?.data || []).find(
+                            (item) =>
+                              item.serviceCode ===
+                              watch(`salesOrderServices.${index}.serviceCode`)
+                          )}
                           getOptionLabel={(option) => option.name}
                           onChange={(_, value) => {
                             setValue(
@@ -784,6 +793,7 @@ export default function SalesOrderEdit() {
                 multiline
                 rows={4}
                 fullWidth
+                value={watch("memo")}
                 {...register("memo")}
               ></TextField>
             </Grid>
@@ -821,6 +831,9 @@ export default function SalesOrderEdit() {
 
                       calculateTotalAmount();
                     }}
+                    value={(taxList.data?.data || []).find(
+                      (item) => item.taxCode === watch("taxCode")
+                    )}
                     disableClearable
                     getOptionLabel={(option) => option.name}
                     isOptionEqualToValue={(opt, value) =>
@@ -918,7 +931,7 @@ export default function SalesOrderEdit() {
                 variant="contained"
                 color="error"
                 onClick={handleCancel}
-                disabled={createSalesOrder.isLoading}
+                disabled={updateSalesOrder.isLoading}
               >
                 Cancel
               </Button>
@@ -926,7 +939,7 @@ export default function SalesOrderEdit() {
             <Grid item>
               <Button
                 variant="contained"
-                disabled={createSalesOrder.isLoading}
+                disabled={updateSalesOrder.isLoading}
                 startIcon={<SaveAltOutlinedIcon />}
                 onClick={handleSubmit(onSubmit)}
               >

@@ -13,7 +13,7 @@ export const areaRouter = createProtectedRouter()
       const data = await prisma.area.findMany({
         where: { orgCode: ctx.user.orgCode },
       });
-      return { data };
+      return { data: data, meta: "Hello World" };
     },
   })
   .query("find", {

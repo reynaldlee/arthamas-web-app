@@ -1,3 +1,4 @@
+import { TRPCClientError } from "@trpc/client";
 import { Prisma } from "@prisma/client";
 import { generateDocNo } from "../../utils/docNo";
 import { format } from "date-fns";
@@ -7,6 +8,7 @@ import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
+import { TRPCError } from "@trpc/server";
 
 // const a: Prisma.SalesQuoteServiceCreateManySalesQuoteInput;
 
@@ -14,18 +16,18 @@ export const goodsReleaseOrderItemSchema = z.object({
   lineNo: z.number().min(1),
   productCode: productSchema.shape.productCode,
   packagingCode: packagingSchema.shape.packagingCode,
-  desc: z.string().optional(),
+  desc: z.string().optional().nullable(),
   qty: z.number(),
   unitCode: z.string(),
   unitQty: z.number(),
   totalUnitQty: z.number(),
-  salesOrderItemDocNo: z.string(),
   salesOrderItemLineNo: z.number(),
+  salesOrderItemDocNo: z.string(),
 });
 
 export const goodsReleaseOrderSchema = z.object({
   salesOrderDocNo: z.string(),
-  deliveryDate: z.string(),
+  deliveryDate: z.date(),
   warehouseCode: z.string(),
   memo: z.string().optional().nullable(),
   goodsReleaseOrderItems: z
@@ -66,9 +68,21 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
           },
         },
         include: {
+          warehouse: true,
+          salesOrder: {
+            include: {
+              customer: true,
+            },
+          },
           goodsReleaseOrderItems: {
             include: {
-              product: true,
+              product: {
+                include: {
+                  productGrade: true,
+                  productType: true,
+                  productCategory: true,
+                },
+              },
               productPackaging: true,
             },
           },
@@ -100,12 +114,12 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
           data: {
             docNo: docNo,
             ...goodsRelease,
-            deliveryDate: new Date(input.deliveryDate),
+            deliveryDate: input.deliveryDate,
             status: "Open",
             orgCode: ctx.user.orgCode,
             goodsReleaseOrderItems: {
               createMany: {
-                data: goodsReleaseOrderItems as any,
+                data: goodsReleaseOrderItems.filter((item) => item.qty != 0),
               },
             },
             createdBy: ctx.user.username,
@@ -128,19 +142,41 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
       const { docNo, fields } = input;
       const { goodsReleaseOrderItems, ...others } = fields;
 
-      const data = await prisma.$transaction(async (prisma) => {
-        await prisma.goodsReleaseOrderItem.deleteMany({
-          where: {
+      const goodReleaseOrder = await prisma.goodsReleaseOrder.findUnique({
+        where: {
+          docNo_orgCode: {
             docNo: docNo,
             orgCode: ctx.user.orgCode,
           },
+        },
+      });
+
+      if (!goodReleaseOrder) {
+        throw new TRPCError({
+          message: "No SP2B tidak ditemukan",
+          code: "BAD_REQUEST",
+        });
+      }
+
+      const data = await prisma.$transaction(async (prisma) => {
+        //remove old items
+
+        await prisma.goodsReleaseOrderItem.deleteMany({
+          where: {
+            docNo: docNo,
+            orgCode: goodReleaseOrder.orgCode,
+          },
         });
 
+        // re-create items
         await prisma.goodsReleaseOrderItem.createMany({
-          data: goodsReleaseOrderItems.map((item) => ({
-            docNo: docNo,
-            ...item,
-          })) as any,
+          data: goodsReleaseOrderItems
+            .map((item) => ({
+              docNo: docNo,
+              orgCode: goodReleaseOrder.orgCode,
+              ...item,
+            }))
+            .filter((item) => item.qty > 0),
         });
 
         return await prisma.goodsReleaseOrder.update({
@@ -153,6 +189,7 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
           },
         });
       });
+      console.log("c");
 
       return { data };
     },

@@ -32,6 +32,7 @@ import { z } from "zod";
 import { pick } from "lodash";
 import { format } from "date-fns";
 import { goodsReleaseOrderSchema } from "src/server/routers/goodsRelease";
+import { DatePicker } from "@mui/x-date-pickers";
 
 type GoodsReleaseOrderFormValues = z.infer<typeof goodsReleaseOrderSchema>;
 
@@ -97,6 +98,7 @@ export default function Sp2bCreate() {
 
       reset({
         ...getValues(),
+        deliveryDate: salesOrder.data.data?.dueDate,
         warehouseCode: salesOrder.data.data?.warehouseCode,
       });
     }
@@ -109,6 +111,7 @@ export default function Sp2bCreate() {
   };
 
   const onSubmit = (data: GoodsReleaseOrderFormValues) => {
+    console.log(data);
     createGoodsReleaseOrder.mutate(data);
   };
 
@@ -140,15 +143,13 @@ export default function Sp2bCreate() {
           </Grid>
 
           <Grid item md={2} xs={6}>
-            <TextField
-              {...register("deliveryDate")}
-              type="date"
-              InputLabelProps={{
-                shrink: true,
+            <DatePicker
+              onChange={(value) => {
+                setValue("deliveryDate", value!);
               }}
-              fullWidth
-              defaultValue={format(new Date(), "yyyy-MM-dd")}
               label="Delivery Date"
+              value={watch("deliveryDate")}
+              renderInput={(params) => <TextField {...params} required />}
             />
           </Grid>
         </Grid>

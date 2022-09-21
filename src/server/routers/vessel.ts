@@ -1,6 +1,7 @@
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
+import { productSchema } from "./product";
 
 const vesselProductSchema = z.object({
   productCode: z.string().max(20),
@@ -41,6 +42,21 @@ export const vesselRouter = createProtectedRouter()
             vesselCode: input,
             orgCode: ctx.user.orgCode,
           },
+        },
+      });
+      return { data };
+    },
+  })
+  .query("getVesselProducts", {
+    input: z.string(),
+    resolve: async ({ ctx, input }) => {
+      const data = await prisma.vesselProduct.findMany({
+        where: {
+          vesselCode: input,
+          orgCode: ctx.user.orgCode,
+        },
+        include: {
+          product: true,
         },
       });
       return { data };
@@ -97,6 +113,24 @@ export const vesselRouter = createProtectedRouter()
       return { data };
     },
   })
+  .mutation("addProducts", {
+    input: z.object({
+      productCode: productSchema.shape.productCode,
+      vesselCode: vesselSchema.shape.vesselCode,
+    }),
+    resolve: async ({ input, ctx }) => {
+      const result = await prisma.vesselProduct.create({
+        data: {
+          vesselCode: input.vesselCode,
+          productCode: input.productCode,
+          orgCode: ctx.user.orgCode,
+        },
+      });
+
+      return { data: result };
+    },
+  })
+
   .mutation("updateProducts", {
     input: z.object({
       vesselCode: vesselSchema.shape.vesselCode,

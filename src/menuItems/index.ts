@@ -141,11 +141,11 @@ const menuItems = [
         icon: SupervisorAccountTwoToneIcon,
         link: "/management/users",
       },
-      {
-        name: "Roles & Permissions",
-        icon: PermIdentityTwoToneIcon,
-        link: "/management/roles-permission",
-      },
+      // {
+      //   name: "Roles & Permissions",
+      //   icon: PermIdentityTwoToneIcon,
+      //   link: "/management/roles-permission",
+      // },
     ],
   },
   {
@@ -218,8 +218,8 @@ const menuItems = [
     heading: "Inventory",
     items: [
       {
-        name: "Products",
-        link: "/management/products",
+        name: "Inventory",
+        link: "/inventories",
         icon: DesignServicesTwoToneIcon,
       },
       {
@@ -232,18 +232,19 @@ const menuItems = [
         icon: DesignServicesTwoToneIcon,
         items: [
           {
-            name: "Create Stock Transfer",
-            link: "/stock-transfer/create",
-          },
-          {
-            name: "Receive Stock Transfer",
-            link: "/stock-transfer/receive",
+            name: "Stock Transfer",
+            link: "/inventories/stock-transfer",
           },
         ],
       },
       {
-        name: "Tirisan",
-        link: "/inventory/tirisan",
+        name: "Stock Opname",
+        link: "/inventories/stock-opname",
+        icon: DesignServicesTwoToneIcon,
+      },
+      {
+        name: "Stock Adjustment",
+        link: "/inventories/stock-adjustment",
         icon: DesignServicesTwoToneIcon,
       },
     ],
@@ -253,18 +254,23 @@ const menuItems = [
     items: [
       {
         name: "SP2B",
-        link: "/warehouse/sp2b",
+        link: "/sales/sp2b",
         icon: DesignServicesTwoToneIcon,
       },
       {
         name: "Surat Jalan",
-        link: "/warehouse/delivery-order",
+        link: "/sales/deliveries",
         icon: DesignServicesTwoToneIcon,
       },
       {
-        name: "Order Tracking",
-        icon: SupportTwoToneIcon,
-        link: "/warehouse/tracking",
+        name: "Penerimaan Stock Transfer",
+        link: "/inventories/stock-transfer/receive",
+        icon: DesignServicesTwoToneIcon,
+      },
+      {
+        name: "Penerimaan Pembelian",
+        link: "/purchases/receipt",
+        icon: DesignServicesTwoToneIcon,
       },
     ],
   },

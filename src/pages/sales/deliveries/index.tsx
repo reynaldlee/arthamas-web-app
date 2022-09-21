@@ -19,13 +19,11 @@ export default function SalesDeliveryIndex() {
   const tableId = useId();
   const router = useRouter();
 
-  const cancelGoodsReleaseOrder = trpc.useMutation([
-    "goodsReleaseOrder.cancel",
-  ]);
+  const cancelSalesDelivery = trpc.useMutation(["salesDelivery.cancel"]);
 
   const handleCancel = (docNo: string) => {
-    if (window.confirm(`Are you sure you want to cancel SP2B ${docNo}`)) {
-      cancelGoodsReleaseOrder.mutate(docNo, {
+    if (window.confirm(`Are you sure you want to cancel delivery ${docNo}`)) {
+      cancelSalesDelivery.mutate(docNo, {
         onError: (error) => {
           console.error(error);
         },
@@ -104,10 +102,10 @@ export default function SalesDeliveryIndex() {
           },
           {
             label: "Customer",
-            name: "goodsReleaseOrder",
+            name: "salesOrder",
             options: {
               customBodyRender: (data) => {
-                return JSON.stringify(data);
+                return data.customer.name;
               },
             },
           },
@@ -137,15 +135,15 @@ export default function SalesDeliveryIndex() {
                             router.push(`/sales/deliveries/${id}/edit`),
                         },
                         {
-                          label: "Print Delivery Notes",
+                          label: "Print Surat Jalan",
                           onClick: () =>
                             router.push(`/sales/deliveries/${id}/print`),
                         },
                         {
-                          label: "Create Delivery",
+                          label: "Create Invoice",
                           onClick: () =>
                             router.push(
-                              `/sales/deliveries/create?goodsReleaseOrderDocNo=${id}`
+                              `/sales/invoices/create?salesDeliveryDocNo=${id}`
                             ),
                         },
                         {

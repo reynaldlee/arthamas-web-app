@@ -1,4 +1,5 @@
 import { prisma } from "@/prisma/index";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 
@@ -9,11 +10,21 @@ export const bankAccountSchema = z.object({
   bankName: z.string().max(40),
   currencyCode: z.string().max(3),
 });
-export const portRouter = createProtectedRouter()
+export const bankAccountRouter = createProtectedRouter()
   .query("findAll", {
-    resolve: async ({ ctx }) => {
+    input: z
+      .object({
+        currencyCode: z.string().optional(),
+      })
+      .optional(),
+    resolve: async ({ input, ctx }) => {
+      const where: Prisma.BankAccountWhereInput = { orgCode: ctx.user.orgCode };
+
+      if (input?.currencyCode) {
+        where.currencyCode = input.currencyCode;
+      }
       const data = await prisma.bankAccount.findMany({
-        where: { orgCode: ctx.user.orgCode },
+        where: where,
       });
       return { data };
     },

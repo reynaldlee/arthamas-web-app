@@ -1,6 +1,5 @@
 import MainLayout from "@/components/Layouts/MainLayout";
-import { trpc } from "@/utils/trpc";
 
-export default function SalesInvoiceIndex() {
+export default function PurchaseInvoiceIndex() {
   return <MainLayout></MainLayout>;
 }
