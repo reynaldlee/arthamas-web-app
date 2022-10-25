@@ -47,7 +47,11 @@ export default function MoreMenu({ actions, disabled }: Props) {
         onClose={handleClose}
       >
         {actions.map((option, index) => (
-          <MenuItem key={index} onClick={option.onClick}>
+          <MenuItem
+            key={index}
+            onClick={option.onClick}
+            disabled={option.disabled}
+          >
             <Typography color={`${option.danger ? "error" : "main"}`}>
               {option.label}
             </Typography>

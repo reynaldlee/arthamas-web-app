@@ -66,6 +66,26 @@ export const purchaseOrderRouter = createProtectedRouter()
       return { data };
     },
   })
+  .query("findAllForReceipt", {
+    resolve: async ({ ctx }) => {
+      const data = await prisma.purchaseOrder.findMany({
+        where: {
+          orgCode: ctx.user.orgCode,
+          status: {
+            notIn: ["Cancelled", "Completed"],
+          },
+        },
+        include: {
+          supplier: { select: { name: true } },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return { data };
+    },
+  })
   .query("find", {
     input: z.string(),
     resolve: async ({ ctx, input }) => {
@@ -87,7 +107,14 @@ export const purchaseOrderRouter = createProtectedRouter()
         },
       });
 
-      return { data };
+      const receiptSummary = await prisma.$transaction(async (prisma) => {
+        return await getPurchaseOrderToReceiptSummary(prisma, {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
+        });
+      });
+
+      return { data, receiptSummary };
     },
   })
   .mutation("create", {
@@ -103,6 +130,8 @@ export const purchaseOrderRouter = createProtectedRouter()
             docNo: docNo,
             memo: purchaseOrder.memo,
             shipTo: purchaseOrder.shipTo,
+            totalProduct: purchaseOrder.totalProduct,
+            totalService: purchaseOrder.totalService,
             taxAmount: purchaseOrder.taxAmount,
             taxRate: purchaseOrder.taxRate,
             totalAmount: purchaseOrder.totalAmount,
@@ -166,6 +195,7 @@ export const purchaseOrderRouter = createProtectedRouter()
         await prisma.purchaseOrderItem.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 
@@ -250,3 +280,38 @@ async function updateSalesQuoteStatus(
     },
   });
 }
+
+export const getPurchaseOrderToReceiptSummary = async (
+  prisma: Prisma.TransactionClient,
+  purchaseOrder: {
+    orgCode: string;
+    docNo: string;
+  }
+) => {
+  const poItems = await prisma.purchaseOrderItem.findMany({
+    where: { ...purchaseOrder },
+    orderBy: { lineNo: "desc" },
+  });
+
+  const prItems = await prisma.purchaseReceiptItem.groupBy({
+    _sum: { qty: true },
+    where: {
+      purchaseOrderDocNo: purchaseOrder.docNo,
+      orgCode: purchaseOrder.orgCode,
+    },
+    by: ["purchaseOrderDocNo", "purchaseOrderLineNo"],
+  });
+
+  const purchaseOrderSummary = poItems.map((poItem) => {
+    return {
+      productCode: poItem.productCode,
+      packagingCode: poItem.packagingCode,
+      lineNo: poItem.lineNo,
+      qtyOrdered: poItem.qty,
+      qtyReceived:
+        prItems.find((prItem) => prItem.purchaseOrderLineNo === poItem.lineNo)
+          ?._sum.qty || 0,
+    };
+  });
+  return purchaseOrderSummary;
+};

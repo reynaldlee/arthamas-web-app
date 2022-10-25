@@ -3,18 +3,19 @@ import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 import { productSchema } from "./product";
 
-const vesselProductSchema = z.object({
+export const vesselProductSchema = z.object({
   productCode: z.string().max(20),
 });
 
-const vesselSchema = z.object({
+export const vesselSchema = z.object({
   vesselCode: z.string().max(20),
   regNo: z.string().max(40),
-  vesselType: z.string().max(40).optional(),
-  imoNumber: z.string().max(40).optional(),
-  teus: z.string().max(40).optional(),
+  vesselType: z.string().max(40).optional().nullable(),
+  imoNumber: z.string().max(40).optional().nullable(),
+  teus: z.string().max(40).optional().nullable(),
   name: z.string().max(40),
   customerCode: z.string().max(20),
+  isAllProduct: z.boolean().optional().nullable(),
 });
 
 export const vesselRouter = createProtectedRouter()

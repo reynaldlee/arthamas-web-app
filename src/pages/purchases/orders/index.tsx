@@ -145,7 +145,7 @@ export default function PurchaseOrderIndex() {
             label: "Action",
             options: {
               filter: false,
-              customBodyRender: (id) => {
+              customBodyRender: (id, { rowData }) => {
                 return (
                   <>
                     <MoreMenu
@@ -153,23 +153,13 @@ export default function PurchaseOrderIndex() {
                         {
                           label: "Edit",
                           onClick: () =>
-                            router.push(`/sales/orders/${id}/edit`),
-                        },
-                        {
-                          label: "Print Sales Order",
-                          onClick: () =>
-                            router.push(`/sales/orders/${id}/print`),
-                        },
-                        {
-                          label: "Create SP2B",
-                          onClick: () =>
-                            router.push(
-                              `/sales/sp2b/create?salesOrderDocNo=${id}`
-                            ),
+                            router.push(`/purchases/orders/${id}/edit`),
+                          disabled: rowData[2] !== "Open",
                         },
                         {
                           label: "Cancel",
                           danger: true,
+                          disabled: rowData[2] !== "Open",
                           onClick: () => {
                             if (
                               window.confirm(

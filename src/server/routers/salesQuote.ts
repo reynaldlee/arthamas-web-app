@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { generateDocNo } from "./../../utils/docNo";
 import { format } from "date-fns";
@@ -128,6 +129,30 @@ export const salesQuoteRouter = createProtectedRouter()
     resolve: async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { salesQuoteItems, salesQuoteServices, ...updatedField } = fields;
+
+      const salesQuoteData = await prisma.salesQuote.findUnique({
+        where: {
+          docNo_orgCode: {
+            docNo: docNo,
+            orgCode: ctx.user.orgCode,
+          },
+        },
+        select: { status: true },
+      });
+
+      if (!salesQuoteData) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Sales quote ${docNo} not found`,
+        });
+      }
+
+      if (salesQuoteData.status !== "Open") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Sales quote ${docNo} has been "${salesQuoteData.status}". You can no longer edit this quotation`,
+        });
+      }
 
       const data = await prisma.$transaction(async (prisma) => {
         await prisma.salesQuoteItem.deleteMany({

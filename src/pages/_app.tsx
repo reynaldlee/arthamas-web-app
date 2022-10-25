@@ -32,6 +32,7 @@ export default withTRPC<AppRouter>({
             refetchOnWindowFocus: false,
             retry: 2,
             staleTime: 0,
+            cacheTime: 0,
             onError: (err: any) => {
               if (err.data.httpStatus === 401) {
                 window.document.location = "/login";

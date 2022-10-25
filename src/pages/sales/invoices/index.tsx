@@ -170,7 +170,7 @@ export default function SalesInvoiceIndex() {
             label: "Action",
             options: {
               filter: false,
-              customBodyRender: (id) => {
+              customBodyRender: (id, { rowData }) => {
                 return (
                   <>
                     <MoreMenu
@@ -179,11 +179,13 @@ export default function SalesInvoiceIndex() {
                           label: "Edit",
                           onClick: () =>
                             router.push(`/sales/invoices/${id}/edit`),
+                          disabled: rowData[3] === "Cancelled",
                         },
                         {
                           label: "Print Invoice",
                           onClick: () =>
                             router.push(`/sales/invoices/${id}/print`),
+                          disabled: rowData[3] === "Cancelled",
                         },
                         {
                           label: "Create Payment",
@@ -191,10 +193,13 @@ export default function SalesInvoiceIndex() {
                             router.push(
                               `/sales/payments/create?salesInvoiceDocNo=${id}`
                             ),
+                          disabled:
+                            rowData[3] === "Cancelled" || rowData[3] === "Paid",
                         },
                         {
                           label: "Cancel",
                           danger: true,
+                          disabled: rowData[3] === "Cancelled",
                           onClick: () => {
                             if (
                               window.confirm(

@@ -32,77 +32,87 @@ import SaveAltOutlinedIcon from "@mui/icons-material/SaveAltOutlined";
 
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
-import { salesQuoteSchema } from "src/server/routers/salesQuote";
+
 import { pick } from "lodash";
-import { addDays, format } from "date-fns";
-import { Prisma } from "@prisma/client";
 import { DatePicker } from "@mui/x-date-pickers";
+import { purchaseOrderSchema } from "src/server/routers/purchaseOrder";
 
-type SalesQuoteFormValues = z.infer<typeof salesQuoteSchema>;
+type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
-type QueryParam = {
-  docNo: string;
-};
-
-export default function SalesQuotesEdit() {
+export default function PurchaseOrderEdit() {
   const router = useRouter();
-  const { docNo } = router.query as QueryParam;
+  const docNo = router.query.docNo as string;
 
-  const { data: salesQuote } = trpc.useQuery(["salesQuote.find", docNo], {
-    enabled: !!docNo,
-  });
+  const { register, watch, setValue, handleSubmit, control, reset, getValues } =
+    useForm<PurchaseOrderFormValues>({
+      defaultValues: {
+        dueDate: new Date(),
+        date: new Date(),
+      },
+    });
 
-  const { register, watch, setValue, handleSubmit, control, reset } =
-    useForm<SalesQuoteFormValues>();
+  const { data, isLoading } = trpc.useQuery(["purchaseOrder.find", docNo]);
 
-  const customerList = trpc.useQuery(["customer.findAll"]);
+  useEffect(() => {
+    if (!data) return;
+
+    reset({
+      currencyCode: data.data?.currencyCode,
+      date: data.data?.date,
+      dueDate: data.data?.dueDate,
+      exchangeRate: data.data?.exchangeRate,
+      memo: data.data?.memo,
+      totalProduct: data.data?.totalProduct,
+      totalService: data.data?.totalService,
+      shipTo: data.data?.shipTo,
+      supplierCode: data.data?.supplierCode,
+      taxRate: data.data?.taxRate,
+      taxAmount: data.data?.taxAmount,
+      totalBeforeTax: data.data?.totalBeforeTax,
+      totalAmount: data.data?.totalAmount,
+      warehouseCode: data.data?.warehouseCode,
+      purchaseOrderItems: data.data?.purchaseOrderItems,
+    });
+  }, [data, reset]);
+
+  const supplierList = trpc.useQuery(["supplier.findAll"]);
   const currencyList = trpc.useQuery(["currency.findAll"]);
-  const portList = trpc.useQuery(["port.findAll"]);
-  const taxList = trpc.useQuery(["tax.findAll"]);
-  const serviceList = trpc.useQuery(["service.findAll"]);
   const warehouseList = trpc.useQuery(["warehouse.findAll"]);
+  const productList = trpc.useQuery(["product.findAll"]);
 
-  const selectedCustomerCode = watch("customerCode");
-  const selectedVesselCode = watch("vesselCode");
-  const selectedPortCode = watch("portCode");
+  const selectedWarehouseCode = watch("warehouseCode");
+  const selectedSupplierCode = watch("supplierCode");
 
-  const productList = trpc.useQuery(
-    [
-      "product.findByVesselAndPort",
-      { vesselCode: selectedVesselCode, portCode: selectedPortCode },
-    ],
-    { enabled: !!selectedVesselCode }
+  const selectedWarehouse = trpc.useQuery(
+    ["warehouse.find", selectedWarehouseCode],
+    { enabled: !!selectedWarehouseCode }
   );
 
-  const createSalesQuote = trpc.useMutation(["salesQuote.update"], {
+  const selectedSupplier = trpc.useQuery(
+    ["supplier.find", selectedSupplierCode],
+    {
+      enabled: !!selectedSupplierCode,
+    }
+  );
+
+  const updatePurchaseOrder = trpc.useMutation(["purchaseOrder.update"], {
     onError: (err) => {
       console.log(err);
     },
     onSuccess: () => {
-      router.push("/sales/quotes");
+      router.push("/purchases/orders");
     },
   });
 
-  useEffect(() => {
-    if (salesQuote?.data) {
-      reset(salesQuote.data as any);
-    }
-  }, [salesQuote, reset]);
-
-  const salesQuoteItems = useFieldArray({
-    name: "salesQuoteItems",
+  const purchaseOrderItems = useFieldArray({
+    name: "purchaseOrderItems",
     control: control,
   });
 
-  const salesQuoteServices = useFieldArray({
-    name: "salesQuoteServices",
+  const purchaseOrderServices = useFieldArray({
+    name: "purchaseOrderServices",
     control: control,
   });
-
-  const selectedCustomer = trpc.useQuery(
-    ["customer.find", selectedCustomerCode],
-    { enabled: !!selectedCustomerCode }
-  );
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to exit?")) {
@@ -110,16 +120,16 @@ export default function SalesQuotesEdit() {
     }
   };
 
-  const onSubmit = (data: SalesQuoteFormValues) => {
-    createSalesQuote.mutate({
-      docNo: salesQuote?.data?.docNo,
+  const onSubmit = (data: PurchaseOrderFormValues) => {
+    updatePurchaseOrder.mutate({
+      docNo: docNo,
       fields: data,
     });
   };
 
   const handleAddMoreProduct = () => {
-    salesQuoteItems.append({
-      lineNo: salesQuoteItems.fields.length + 1,
+    purchaseOrderItems.append({
+      lineNo: purchaseOrderItems.fields.length + 1,
       desc: "",
       qty: 1,
       productCode: "",
@@ -132,40 +142,31 @@ export default function SalesQuotesEdit() {
     });
   };
 
-  const handleAddMoreService = () => {
-    salesQuoteServices.append({
-      serviceCode: "",
-      amount: 0,
-      desc: "",
-      unitPrice: 0,
-    });
-  };
-
   const handleRemoveProduct = (index: number) => {
-    salesQuoteItems.remove(index);
+    purchaseOrderItems.remove(index);
     calculateProductSubtotal();
   };
 
   const handleRemoveService = (index: number) => {
-    salesQuoteServices.remove(index);
+    purchaseOrderServices.remove(index);
     calculateServiceSubtotal();
   };
 
   const handleProductQtyChange = (index: number) => (value: number) => {
-    const unitQty = watch(`salesQuoteItems.${index}.unitQty`);
-    setValue(`salesQuoteItems.${index}.qty`, value);
-    setValue(`salesQuoteItems.${index}.totalUnitQty`, value * unitQty);
+    const unitQty = watch(`purchaseOrderItems.${index}.unitQty`);
+    setValue(`purchaseOrderItems.${index}.qty`, value);
+    setValue(`purchaseOrderItems.${index}.totalUnitQty`, value * unitQty);
     calculateProductAmount(index);
   };
 
   const calculateProductsAmount = () => {
-    salesQuoteItems.fields.forEach((_, index) => {
+    purchaseOrderItems.fields.forEach((_, index) => {
       calculateProductAmount(index);
     });
   };
 
   const calculateServicesAmount = () => {
-    salesQuoteServices.fields.forEach((_, index) => {
+    purchaseOrderServices.fields.forEach((_, index) => {
       calculateServiceAmount(index);
     });
     calculateServiceSubtotal();
@@ -173,7 +174,7 @@ export default function SalesQuotesEdit() {
 
   const calculateServiceSubtotal = () => {
     const servicesSubtotal = _.sumBy(
-      watch("salesQuoteServices"),
+      watch("purchaseOrderServices"),
       (o) => o.amount
     );
     setValue("totalService", servicesSubtotal);
@@ -181,7 +182,10 @@ export default function SalesQuotesEdit() {
   };
 
   const calculateProductSubtotal = () => {
-    const productSubtotal = _.sumBy(watch("salesQuoteItems"), (o) => o.amount);
+    const productSubtotal = _.sumBy(
+      watch("purchaseOrderItems"),
+      (o) => o.amount
+    );
     setValue("totalProduct", productSubtotal);
     calculateTotalAmount();
   };
@@ -190,7 +194,6 @@ export default function SalesQuotesEdit() {
     const totalProduct = watch("totalProduct") || 0;
     const totalService = watch("totalService") || 0;
     const taxRate = watch("taxRate") || 0;
-
     const totalBeforeTax = totalProduct + totalService;
     const taxAmount = totalBeforeTax * taxRate;
 
@@ -200,83 +203,92 @@ export default function SalesQuotesEdit() {
   };
 
   const calculateProductAmount = (index: number) => {
-    const totalUnitQty = watch(`salesQuoteItems.${index}.totalUnitQty`);
-    const unitPrice = watch(`salesQuoteItems.${index}.unitPrice`);
+    const totalUnitQty = watch(`purchaseOrderItems.${index}.totalUnitQty`);
+    const unitPrice = watch(`purchaseOrderItems.${index}.unitPrice`);
     const exchangeRate = watch("exchangeRate");
+
     setValue(
-      `salesQuoteItems.${index}.amount`,
+      `purchaseOrderItems.${index}.amount`,
       totalUnitQty * unitPrice * exchangeRate
     );
     calculateProductSubtotal();
   };
 
   const calculateServiceAmount = (index: number) => {
-    const unitPrice = watch(`salesQuoteServices.${index}.unitPrice`);
+    const unitPrice = watch(`purchaseOrderServices.${index}.unitPrice`);
     const exchangeRate = watch("exchangeRate");
-    setValue(`salesQuoteServices.${index}.amount`, unitPrice * exchangeRate);
+    setValue(`purchaseOrderServices.${index}.amount`, unitPrice * exchangeRate);
     calculateServiceSubtotal();
   };
 
   const calculateTotalUnitQty = (index: number) => {
-    const qty = watch(`salesQuoteItems.${index}.qty`);
-    const unitQty = watch(`salesQuoteItems.${index}.unitQty`);
-    setValue(`salesQuoteItems.${index}.totalUnitQty`, qty * unitQty);
+    const qty = watch(`purchaseOrderItems.${index}.qty`);
+    const unitQty = watch(`purchaseOrderItems.${index}.unitQty`);
+    setValue(`purchaseOrderItems.${index}.totalUnitQty`, qty * unitQty);
     calculateProductsAmount();
   };
 
+  console.log(getValues());
+
   return (
     <MainLayout>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h3">Create Sales Order</Typography>
+      </Box>
+
       <Paper sx={{ p: 2 }}>
         {/* <Box sx={{ py: 2 }}>
           <PageHeader title="Create Sales Inquiries"></PageHeader>
         </Box> */}
+
         <Grid container gap={2} sx={{ pt: 2 }}>
           <Grid item md={4} xs={12}>
             <Autocomplete
-              {...register("customerCode")}
-              options={(customerList.data?.data || []).map((item) =>
-                pick(item, ["customerCode", "name"])
-              )}
-              value={pick(
-                customerList.data?.data.find((item) => {
-                  return item.customerCode === selectedCustomerCode;
-                }),
-                ["customerCode", "name"]
+              options={(supplierList.data?.data || []).map((item) =>
+                pick(item, ["supplierCode", "name"])
               )}
               onChange={(_, value) => {
-                setValue("customerCode", value.customerCode, {
+                setValue("supplierCode", value.supplierCode, {
                   shouldDirty: true,
-                  shouldValidate: true,
-                  shouldTouch: true,
                 });
+              }}
+              value={{
+                supplierCode: selectedSupplier.data?.data?.supplierCode,
+                name: selectedSupplier.data?.data?.name,
               }}
               disableClearable
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(opt, value) =>
-                opt.customerCode === value.customerCode
+                opt.supplierCode === value.supplierCode
               }
               renderInput={(params) => (
-                <TextField {...params} label="Customer" />
+                <TextField {...params} label="Supplier" />
               )}
             />
           </Grid>
 
           <Grid item md={2} xs={6}>
-            <TextField
-              defaultValue={"IDR"}
-              select
-              fullWidth
-              label="Currency"
-              {...register("currencyCode")}
-            >
-              {(currencyList.data?.data || []).map((item) => (
-                <MenuItem key={item.currencyCode} value={item.currencyCode}>
-                  {item.currencyCode}
-                </MenuItem>
-              ))}
-            </TextField>
+            {!!watch("currencyCode") ? (
+              <TextField
+                select
+                fullWidth
+                label="Currency"
+                value={watch("currencyCode")}
+                onChange={(e) => {
+                  setValue("currencyCode", e.target.value, {
+                    shouldDirty: true,
+                  });
+                }}
+              >
+                {(currencyList.data?.data || []).map((item) => (
+                  <MenuItem key={item.currencyCode} value={item.currencyCode}>
+                    {item.currencyCode}
+                  </MenuItem>
+                ))}
+              </TextField>
+            ) : null}
           </Grid>
-          <Grid item md={2} xs={6}>
+          <Grid item md={3} xs={6}>
             <TextFieldNumber
               fullWidth
               label="Exchange Rate"
@@ -297,11 +309,12 @@ export default function SalesQuotesEdit() {
         </Grid>
       </Paper>
 
-      {watch("customerCode") ? (
+      {watch("supplierCode") ? (
         <>
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
               <DatePicker
+                disableMaskedInput
                 onChange={(value) => {
                   setValue("date", value!);
                 }}
@@ -312,105 +325,62 @@ export default function SalesQuotesEdit() {
             </Grid>
             <Grid item md={4} xs={12}>
               <DatePicker
+                disableMaskedInput
                 onChange={(value) => {
-                  setValue("validUntil", value!);
+                  setValue("dueDate", value!);
                 }}
-                label="Quotation Valid Until"
-                value={watch("validUntil")}
+                label="Delivery Date"
+                value={watch("dueDate")}
                 renderInput={(params) => <TextField {...params} required />}
               />
             </Grid>
           </Grid>
           <Grid container gap={2} sx={{ pt: 2 }}>
-            <Grid item md={4} xs={12}>
-              <Autocomplete
-                options={(portList.data?.data || []).map((item) => ({
-                  id: item.portCode,
-                  label: item.name,
-                }))}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                disableClearable
-                onChange={(_, value) => {
-                  setValue("portCode", value.id, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
-                  setValue("shipTo", value.label, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
-                }}
-                renderInput={(params) => (
-                  <TextField {...params} label="Ship to Port" />
-                )}
-                value={
-                  portList.data?.data
-                    .filter((item) => item.portCode === selectedPortCode)
-                    .map((item) => ({ id: item.portCode, label: item.name }))[0]
-                }
-                renderInput={(params) => (
-                  <TextField {...params} label="Ship to Port" />
-                )}
-              />
-            </Grid>
-            <Grid item md={4} xs={12}>
-              <Autocomplete
-                disableClearable
-                options={(selectedCustomer.data?.data?.vessels || []).map(
-                  (item) => pick(item, ["vesselCode", "name"])
-                )}
-                onChange={(_, value) => {
-                  setValue("vesselCode", value.vesselCode, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
-                }}
-                getOptionLabel={(option) => option.name}
-                isOptionEqualToValue={(opt, value) =>
-                  opt.vesselCode === value.vesselCode
-                }
-                renderInput={(params) => (
-                  <TextField {...params} label="Vessel" />
-                )}
-                value={pick(
-                  selectedCustomer.data?.data?.vessels.find(
-                    (item) => item.vesselCode === selectedVesselCode
-                  ),
-                  ["vesselCode", "name"]
-                )}
-              />
-            </Grid>
+            <Grid item md={4} xs={12}></Grid>
+            <Grid item md={4} xs={12}></Grid>
           </Grid>
           <Grid container gap={2} sx={{ pt: 2 }}>
             <Grid item md={4} xs={12}>
               <Autocomplete
                 disablePortal
                 options={(warehouseList.data?.data || []).map((item) =>
-                  pick(item, ["warehouseCode", "name"])
+                  pick(item, ["warehouseCode", "name", "address"])
                 )}
+                value={{
+                  warehouseCode: data?.data?.warehouse.warehouseCode,
+                  name: data?.data?.warehouse.name,
+                  address: data?.data?.warehouse.address,
+                }}
                 onChange={(_, value) => {
+                  setValue("shipTo", value?.address!, {
+                    shouldDirty: true,
+                  });
                   setValue("warehouseCode", value?.warehouseCode!, {
                     shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
                   });
                 }}
-                value={pick(
-                  (warehouseList.data?.data || []).find(
-                    (item) => item.warehouseCode === watch("warehouseCode")
-                  ),
-                  ["warehouseCode", "name"]
-                )}
-                getOptionLabel={(option) => option.name}
+                getOptionLabel={(option) => option.name!}
                 isOptionEqualToValue={(opt, value) =>
                   opt.warehouseCode === value.warehouseCode
                 }
                 renderInput={(params) => (
-                  <TextField {...params} label="Ship From Warehouse" />
+                  <TextField {...params} label="Warehouse" />
                 )}
+              />
+            </Grid>
+          </Grid>
+          <Grid container gap={2} sx={{ pt: 2 }}>
+            <Grid item md={4} xs={12}>
+              <TextField
+                {...register("shipTo")}
+                value={watch("shipTo")}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                label="Shipping Address"
+                fullWidth
+                multiline
+                rows={3}
               />
             </Grid>
           </Grid>
@@ -434,7 +404,7 @@ export default function SalesQuotesEdit() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {salesQuoteItems.fields.map((item, index) => (
+                  {purchaseOrderItems.fields.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Autocomplete
@@ -450,17 +420,16 @@ export default function SalesQuotesEdit() {
                             productList.data?.data?.find(
                               (item) =>
                                 item.productCode ===
-                                watch(`salesQuoteItems.${index}.productCode`)
+                                watch(`purchaseOrderItems.${index}.productCode`)
                             ),
                             ["productCode", "name"]
                           )}
                           getOptionLabel={(option) => option.name}
                           onChange={(_, value) => {
-                            salesQuoteItems.update(index, {
-                              ...salesQuoteItems.fields[index],
+                            purchaseOrderItems.update(index, {
+                              ...purchaseOrderItems.fields[index],
                               productCode: value.productCode,
-                              unitPrice: value.productPrices[0]?.unitPrice || 0,
-                              qty: new Prisma.Decimal(1),
+                              qty: 1,
                             });
                           }}
                           renderInput={(params) => (
@@ -479,7 +448,7 @@ export default function SalesQuotesEdit() {
                           multiline
                           size="small"
                           placeholder="Description"
-                          {...register(`salesQuoteItems.${index}.desc`)}
+                          {...register(`purchaseOrderItems.${index}.desc`)}
                         />
                       </TableCell>
 
@@ -494,8 +463,19 @@ export default function SalesQuotesEdit() {
                             size="small"
                             onValueChange={handleProductQtyChange(index)}
                             placeholder="Qty"
-                            value={watch(`salesQuoteItems.${index}.qty`)}
+                            value={watch(`purchaseOrderItems.${index}.qty`)}
                           />
+                          {/* <Tooltip
+                            color={
+                              item.quantity > item.stock ? "error" : "info"
+                            }
+                            title={`Stock: ${item.stock}`}
+                            sx={{
+                              visibility: item.id ? "visible" : "hidden",
+                            }}
+                          >
+                            <InfoTwoTone></InfoTwoTone>
+                          </Tooltip> */}
                         </Box>
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -504,11 +484,11 @@ export default function SalesQuotesEdit() {
                           size="small"
                           disableClearable
                           options={
-                            productList.data?.data.find(
+                            (productList.data?.data || []).find(
                               (item) =>
                                 item.productCode ===
-                                salesQuoteItems.fields[index].productCode
-                            )?.packagings!
+                                purchaseOrderItems.fields[index].productCode
+                            )?.packagings
                           }
                           isOptionEqualToValue={(option, value) =>
                             option.packagingCode === value.packagingCode
@@ -520,31 +500,30 @@ export default function SalesQuotesEdit() {
                             .find(
                               (item) =>
                                 item.productCode ===
-                                salesQuoteItems.fields[index].productCode
+                                purchaseOrderItems.fields[index].productCode
                             )
-                            ?.packagings?.find(
-                              (i) =>
-                                i.packagingCode ===
-                                watch(`salesQuoteItems.${index}.packagingCode`)
+                            ?.packagings.find(
+                              (item) =>
+                                item.packagingCode ===
+                                watch(
+                                  `purchaseOrderItems.${index}.packagingCode`
+                                )
                             )}
                           placeholder="Packaging"
                           onChange={(_, value) => {
                             setValue(
-                              `salesQuoteItems.${index}.packagingCode`,
+                              `purchaseOrderItems.${index}.packagingCode`,
                               value.packagingCode
                             );
                             setValue(
-                              `salesQuoteItems.${index}.unitCode`,
+                              `purchaseOrderItems.${index}.unitCode`,
                               value.unitCode
                             );
                             setValue(
-                              `salesQuoteItems.${index}.unitQty`,
+                              `purchaseOrderItems.${index}.unitQty`,
                               value.unitQty
                             );
-                            setValue(
-                              `salesQuoteItems.${index}.unitQty`,
-                              value.unitQty
-                            );
+
                             calculateTotalUnitQty(index);
                           }}
                           renderInput={(params) => (
@@ -561,11 +540,11 @@ export default function SalesQuotesEdit() {
                         <TextFieldNumber
                           size="small"
                           fullWidth
-                          value={watch(`salesQuoteItems.${index}.unitPrice`)}
+                          value={watch(`purchaseOrderItems.${index}.unitPrice`)}
                           placeholder="Unit Price"
                           onValueChange={(value) => {
                             setValue(
-                              `salesQuoteItems.${index}.unitPrice`,
+                              `purchaseOrderItems.${index}.unitPrice`,
                               value
                             );
                             calculateProductAmount(index);
@@ -578,9 +557,12 @@ export default function SalesQuotesEdit() {
                           fullWidth
                           contentEditable={false}
                           size="small"
+                          disabled
                           placeholder="Volume"
                           readOnly
-                          value={watch(`salesQuoteItems.${index}.totalUnitQty`)}
+                          value={watch(
+                            `purchaseOrderItems.${index}.totalUnitQty`
+                          )}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -590,7 +572,7 @@ export default function SalesQuotesEdit() {
                           placeholder="Unit"
                           contentEditable={false}
                           size="small"
-                          value={watch(`salesQuoteItems.${index}.unitCode`)}
+                          value={watch(`purchaseOrderItems.${index}.unitCode`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -598,8 +580,9 @@ export default function SalesQuotesEdit() {
                           fullWidth
                           size="small"
                           placeholder="Amount"
+                          disabled
                           contentEditable={false}
-                          value={watch(`salesQuoteItems.${index}.amount`)}
+                          value={watch(`purchaseOrderItems.${index}.amount`)}
                         />
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -635,124 +618,7 @@ export default function SalesQuotesEdit() {
             </Grid>
           </Grid>
           <Divider sx={{ mt: 2 }} />
-          <Grid container sx={{ my: 2 }}>
-            <Typography sx={{ py: 2 }} variant="h3">
-              Services
-            </Typography>
-            <TableContainer sx={{ width: "100%" }}>
-              <Table size="small" stickyHeader sx={{ overflowX: "scroll" }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ minWidth: 250 }}>Service</TableCell>
-                    <TableCell sx={{ minWidth: 200 }}>Description</TableCell>
-                    <TableCell sx={{ minWidth: 120 }}>Price</TableCell>
-                    <TableCell sx={{ minWidth: 100 }}>Amount</TableCell>
-                    <TableCell sx={{ minWidth: 20 }}></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {salesQuoteServices.fields.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <Autocomplete
-                          fullWidth
-                          options={serviceList.data?.data || []}
-                          isOptionEqualToValue={(opt, value) =>
-                            opt.serviceCode === value.serviceCode
-                          }
-                          disableClearable
-                          getOptionLabel={(option) => option.name}
-                          onChange={(_, value) => {
-                            setValue(
-                              `salesQuoteServices.${index}.serviceCode`,
-                              value?.serviceCode!
-                            );
-                            setValue(
-                              `salesQuoteServices.${index}.unitPrice`,
-                              value?.unitPrice!
-                            );
-                            calculateServiceAmount(index);
-                          }}
-                          value={(serviceList.data?.data || []).find(
-                            (item) =>
-                              item.serviceCode ===
-                              watch(`salesQuoteServices.${index}.serviceCode`)
-                          )}
-                          renderInput={(params) => (
-                            <TextField
-                              {...params}
-                              size="small"
-                              placeholder="Select Service"
-                            />
-                          )}
-                        />
-                      </TableCell>
 
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <TextField
-                          fullWidth
-                          multiline
-                          size="small"
-                          placeholder="Description"
-                          {...register(`salesQuoteServices.${index}.desc`)}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <TextFieldNumber
-                          fullWidth
-                          size="small"
-                          value={watch(`salesQuoteServices.${index}.unitPrice`)}
-                          onValueChange={(value) => {
-                            setValue(
-                              `salesQuoteServices.${index}.unitPrice`,
-                              value
-                            );
-                            calculateServiceAmount(index);
-                          }}
-                        />
-                      </TableCell>
-
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <TextFieldNumber
-                          fullWidth
-                          contentEditable={false}
-                          size="small"
-                          name="amount"
-                          readOnly
-                          value={watch(`salesQuoteServices.${index}.amount`)}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <IconButton
-                          color="error"
-                          size="medium"
-                          onClick={() => handleRemoveService(index)}
-                        >
-                          <DeleteIcon fontSize="small"></DeleteIcon>
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <Button
-              variant="outlined"
-              onClick={handleAddMoreService}
-              sx={{ mt: 1 }}
-              startIcon={<AddIcon fontSize="small" />}
-            >
-              Add More
-            </Button>
-            <Grid item xs={12} mt={2}>
-              <Box display="flex" justifyContent="space-between">
-                <Typography variant="h4">Service Subtotal</Typography>
-                <Typography variant="h4">
-                  {formatMoney(watch("totalService"))}
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
           <Grid container sx={{ py: 3 }} spacing={4}>
             <Grid item md={6} xs={12}>
               <TextField
@@ -786,30 +652,26 @@ export default function SalesQuotesEdit() {
                 alignItems="center"
               >
                 <Box display="flex" flexDirection={"row"} alignItems="center">
-                  <Typography variant="h4">Tax</Typography>
-                  <Autocomplete
-                    sx={{ ml: 4, width: 200 }}
-                    size="small"
-                    options={taxList.data?.data || []}
-                    onChange={(_, value) => {
-                      setValue("taxCode", value.taxCode);
-                      setValue("taxRate", value.taxRate);
-                      calculateTotalAmount();
-                    }}
-                    value={(taxList.data?.data || []).find(
-                      (item) => item.taxCode === watch("taxCode")
-                    )}
-                    disableClearable
-                    getOptionLabel={(option) => option.name}
-                    isOptionEqualToValue={(opt, value) =>
-                      opt.taxCode === value.taxCode
-                    }
-                    renderInput={(params) => (
-                      <TextField {...params} label="Select Tax" />
-                    )}
-                  />
+                  <Typography variant="h6" sx={{ mr: 2 }}>
+                    Tax
+                  </Typography>
+                  <Box width={100} mr={2}>
+                    <TextFieldNumber
+                      label="Tax Rate"
+                      size="small"
+                      type="number"
+                      value={watch("taxRate") * 100}
+                      onValueChange={(value) => {
+                        setValue("taxRate", value / 100);
+                        calculateTotalAmount();
+                      }}
+                    ></TextFieldNumber>
+                  </Box>
+                  <Typography variant="h6" sx={{ mr: 2 }}>
+                    %
+                  </Typography>
                 </Box>
-                <Typography variant="h4">
+                <Typography variant="h6">
                   {formatMoney(watch("taxAmount"))}
                 </Typography>
               </Box>
@@ -896,7 +758,7 @@ export default function SalesQuotesEdit() {
                 variant="contained"
                 color="error"
                 onClick={handleCancel}
-                disabled={createSalesQuote.isLoading}
+                disabled={updatePurchaseOrder.isLoading}
               >
                 Cancel
               </Button>
@@ -904,11 +766,11 @@ export default function SalesQuotesEdit() {
             <Grid item>
               <Button
                 variant="contained"
-                disabled={createSalesQuote.isLoading}
+                disabled={updatePurchaseOrder.isLoading}
                 startIcon={<SaveAltOutlinedIcon />}
                 onClick={handleSubmit(onSubmit)}
               >
-                Edit
+                Submit
               </Button>
             </Grid>
           </Grid>

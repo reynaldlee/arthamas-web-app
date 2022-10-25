@@ -107,6 +107,7 @@ export default function SalesOrderCreate() {
         ...fields,
         date: new Date(),
         dueDate: new Date(),
+        poDate: new Date(),
         //@ts-ignore
         salesOrderItems: salesQuoteItems.map((item) => ({
           productCode: item.productCode,
@@ -291,12 +292,12 @@ export default function SalesOrderCreate() {
                   shouldTouch: true,
                 });
               }}
-              value={pick(
-                customerList.data?.data.find((item) => {
-                  return item.customerCode === selectedCustomerCode;
-                }),
-                ["customerCode", "name"]
-              )}
+              // value={pick(
+              //   customerList.data?.data.find((item) => {
+              //     return item.customerCode === selectedCustomerCode;
+              //   }),
+              //   ["customerCode", "name"]
+              // )}
               disableClearable
               getOptionLabel={(option) => option.name}
               isOptionEqualToValue={(opt, value) =>
@@ -442,12 +443,12 @@ export default function SalesOrderCreate() {
                 options={(selectedCustomer.data?.data?.vessels || []).map(
                   (item) => pick(item, ["vesselCode", "name"])
                 )}
-                value={pick(
-                  selectedCustomer.data?.data?.vessels.find(
-                    (item) => item.vesselCode === selectedVesselCode
-                  ),
-                  ["vesselCode", "name"]
-                )}
+                // value={pick(
+                //   selectedCustomer.data?.data?.vessels.find(
+                //     (item) => item.vesselCode === selectedVesselCode
+                //   ),
+                //   ["vesselCode", "name"]
+                // )}
                 onChange={(_, value) => {
                   setValue("vesselCode", value.vesselCode, {
                     shouldDirty: true,

@@ -180,6 +180,7 @@ export const salesPaymentRouter = createProtectedRouter()
         await prisma.salesPaymentItem.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 
@@ -193,6 +194,7 @@ export const salesPaymentRouter = createProtectedRouter()
         await prisma.salesPaymentService.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 

@@ -61,7 +61,7 @@ model Org {
   SalesDelivery            SalesDelivery[]
   SalesDeliveryItem        SalesDeliveryItem[]
   VesselProduct            VesselProduct[]
-  PurchasePaymentItem      PurchasePaymentItem[]
+  PurchasePaymentDetail    PurchasePaymentDetail[]
   SalesDeliveryItemDetail  SalesDeliveryItemDetail[]
   PurchaseInvoice          PurchaseInvoice[]
   PurchaseInvoiceItem      PurchaseInvoiceItem[]
@@ -83,6 +83,7 @@ model Org {
   Packaging                Packaging[]
   SalesInvoiceItem         SalesInvoiceItem[]
   SalesInvoiceService      SalesInvoiceService[]
+  SalesDeliveryPrint       SalesDeliveryPrint[]
 }
 
 model User {
@@ -197,6 +198,7 @@ model Vessel {
   teus         String?         @db.VarChar(40)
   customer     Customer        @relation(fields: [customerCode, orgCode], references: [customerCode, orgCode])
   customerCode String          @db.VarChar(20)
+  isAllProduct Boolean?
   orgCode      String          @db.VarChar(20)
   org          Org             @relation(fields: [orgCode], references: [orgCode])
   createdBy    String          @db.VarChar(20)
@@ -245,6 +247,7 @@ model Warehouse {
   name                      String              @db.VarChar(40)
   phone                     String?             @db.VarChar(20)
   address                   String?
+  barcodeRequired           Boolean?
   areaCode                  String              @db.VarChar(20)
   area                      Area                @relation(fields: [areaCode, orgCode], references: [areaCode, orgCode])
   orgCode                   String              @db.VarChar(20)
@@ -262,6 +265,7 @@ model Warehouse {
   stockTransferDestinations StockTransfer[]     @relation("warehouseDestination")
   GoodsReleaseOrder         GoodsReleaseOrder[]
   SalesDelivery             SalesDelivery[]
+  PurchaseReceipt           PurchaseReceipt[]
 
   @@id([warehouseCode, orgCode])
 }
@@ -411,6 +415,8 @@ model Product {
   PurchaseOrderItem     PurchaseOrderItem[]
   Inventory             Inventory[]
   StockTransferItem     StockTransferItem[]
+  PurchaseReceiptItem   PurchaseReceiptItem[]
+  PurchaseInvoiceItem   PurchaseInvoiceItem[]
 
   @@id([productCode, orgCode])
 }
@@ -460,37 +466,40 @@ model ProductPackaging {
 }
 
 model Packaging {
-  packagingCode    String             @db.VarChar(10)
-  name             String             @db.VarChar(20)
-  orgCode          String             @db.VarChar(20)
-  org              Org                @relation(fields: [orgCode], references: [orgCode])
-  createdBy        String             @db.VarChar(20)
-  updatedBy        String             @db.VarChar(20)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  deletedAt        DateTime?
-  ProductPackaging ProductPackaging[]
-  SalesOrderItem   SalesOrderItem[]
-  SalesQuoteItem   SalesQuoteItem[]
-  SalesInvoiceItem SalesInvoiceItem[]
+  packagingCode       String                @db.VarChar(10)
+  name                String                @db.VarChar(20)
+  orgCode             String                @db.VarChar(20)
+  org                 Org                   @relation(fields: [orgCode], references: [orgCode])
+  createdBy           String                @db.VarChar(20)
+  updatedBy           String                @db.VarChar(20)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+  ProductPackaging    ProductPackaging[]
+  SalesOrderItem      SalesOrderItem[]
+  SalesQuoteItem      SalesQuoteItem[]
+  SalesInvoiceItem    SalesInvoiceItem[]
+  PurchaseReceiptItem PurchaseReceiptItem[]
+  PurchaseInvoiceItem PurchaseInvoiceItem[]
 
   @@id([packagingCode, orgCode])
 }
 
 model Unit {
-  unitCode          String              @db.VarChar(10)
-  unitName          String              @db.VarChar(20)
-  orgCode           String              @db.VarChar(20)
-  org               Org                 @relation(fields: [orgCode], references: [orgCode])
-  createdBy         String              @db.VarChar(20)
-  updatedBy         String              @db.VarChar(20)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  deletedAt         DateTime?
-  ProductPackaging  ProductPackaging[]
-  SalesQuoteItem    SalesQuoteItem[]
-  SalesOrderItem    SalesOrderItem[]
-  PurchaseOrderItem PurchaseOrderItem[]
+  unitCode            String                @db.VarChar(10)
+  unitName            String                @db.VarChar(20)
+  orgCode             String                @db.VarChar(20)
+  org                 Org                   @relation(fields: [orgCode], references: [orgCode])
+  createdBy           String                @db.VarChar(20)
+  updatedBy           String                @db.VarChar(20)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+  ProductPackaging    ProductPackaging[]
+  SalesQuoteItem      SalesQuoteItem[]
+  SalesOrderItem      SalesOrderItem[]
+  PurchaseOrderItem   PurchaseOrderItem[]
+  PurchaseReceiptItem PurchaseReceiptItem[]
 
   @@id([unitCode, orgCode])
 }
@@ -556,24 +565,25 @@ model ProductPrices {
 }
 
 model Currency {
-  currencyCode  String          @db.VarChar(3)
-  name          String          @db.VarChar(40)
-  rateIdr       Decimal         @db.Decimal(15, 2)
-  orgCode       String          @db.VarChar(20)
-  org           Org             @relation(fields: [orgCode], references: [orgCode])
-  productPrice  ProductPrices[]
-  services      Service[]
-  salesQuotes   SalesQuote[]
-  salesOrders   SalesOrder[]
-  createdBy     String          @db.VarChar(20)
-  updatedBy     String          @db.VarChar(20)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  deletedAt     DateTime?
-  BankAccount   BankAccount[]
-  SalesInvoice  SalesInvoice[]
-  SalesPayment  SalesPayment[]
-  PurchaseOrder PurchaseOrder[]
+  currencyCode    String            @db.VarChar(3)
+  name            String            @db.VarChar(40)
+  rateIdr         Decimal           @db.Decimal(15, 2)
+  orgCode         String            @db.VarChar(20)
+  org             Org               @relation(fields: [orgCode], references: [orgCode])
+  productPrice    ProductPrices[]
+  services        Service[]
+  salesQuotes     SalesQuote[]
+  salesOrders     SalesOrder[]
+  createdBy       String            @db.VarChar(20)
+  updatedBy       String            @db.VarChar(20)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deletedAt       DateTime?
+  BankAccount     BankAccount[]
+  SalesInvoice    SalesInvoice[]
+  SalesPayment    SalesPayment[]
+  PurchaseOrder   PurchaseOrder[]
+  PurchasePayment PurchasePayment[]
 
   @@id([currencyCode, orgCode])
 }
@@ -798,10 +808,10 @@ model SalesOrder {
   taxAmount          Decimal             @db.Decimal(15, 2)
   taxCode            String              @db.VarChar(10)
   tax                Tax                 @relation(fields: [taxCode, orgCode], references: [taxCode, orgCode])
-  taxRate            Decimal             @db.Decimal(15, 2)
+  taxRate            Decimal?            @default(0) @db.Decimal(15, 2)
+  totalAmount        Decimal?            @default(0) @db.Decimal(15, 2)
   exchangeRate       Decimal             @db.Decimal(15, 2)
   totalBeforeTax     Decimal             @db.Decimal(15, 2)
-  totalAmount        Decimal             @db.Decimal(15, 2)
   isSKTD             Boolean
   status             SalesOrderStatus
   memo               String?             @db.Text
@@ -960,6 +970,18 @@ model SalesDelivery {
   @@unique([goodsReleaseOrderDocNo, orgCode])
 }
 
+model SalesDeliveryPrint {
+  docNo     String   @db.VarChar(20)
+  orgCode   String   @db.VarChar(20)
+  org       Org      @relation(fields: [orgCode], references: [orgCode])
+  createdBy String   @db.VarChar(20)
+  updatedBy String   @db.VarChar(20)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([docNo, orgCode, createdAt])
+}
+
 enum SalesDeliveryStatus {
   Open
   OnProgress
@@ -1017,8 +1039,10 @@ model SalesInvoice {
   currency             Currency              @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
   exchangeRate         Decimal               @db.Decimal(15, 2)
   taxCode              String                @db.VarChar(10)
-  taxRate              Decimal               @db.Decimal(15, 2)
-  taxAmount            Decimal               @db.Decimal(15, 2)
+  taxRate              Decimal?              @default(0) @db.Decimal(15, 2)
+  taxAmount            Decimal?              @default(0) @db.Decimal(15, 2)
+  withholdingTaxRate   Decimal?              @default(0) @db.Decimal(15, 2)
+  withholdingTaxAmount Decimal?              @default(0) @db.Decimal(15, 2)
   totalAmount          Decimal               @db.Decimal(15, 2)
   unpaidAmount         Decimal               @db.Decimal(15, 2)
   paidAmount           Decimal               @db.Decimal(15, 2)
@@ -1093,23 +1117,28 @@ enum SalesInvoiceStatus {
 }
 
 model SalesPayment {
-  docNo               String               @db.VarChar(40)
-  refNo               String               @db.VarChar(40)
-  date                DateTime             @db.Date
-  currencyCode        String               @db.VarChar(3)
-  currency            Currency             @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
-  exchangeRate        Decimal              @db.Decimal(15, 2)
-  memo                String
-  totalAmount         Decimal              @db.Decimal(15, 2)
-  orgCode             String               @db.VarChar(20)
-  org                 Org                  @relation(fields: [orgCode], references: [orgCode])
-  cancelledAt         DateTime?
-  cancelledBy         String?              @db.VarChar(20)
-  createdBy           String               @db.VarChar(20)
-  updatedBy           String               @db.VarChar(20)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
-  salesPaymentDetails SalesPaymentDetail[]
+  docNo                String               @db.VarChar(40)
+  refNo                String               @db.VarChar(40)
+  date                 DateTime             @db.Date
+  currencyCode         String               @db.VarChar(3)
+  currency             Currency             @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
+  exchangeRate         Decimal              @db.Decimal(15, 2)
+  taxRate              Decimal?             @default(0) @db.Decimal(15, 2)
+  taxAmount            Decimal?             @default(0) @db.Decimal(15, 2)
+  withholdingTaxRate   Decimal?             @default(0) @db.Decimal(15, 2)
+  withholdingTaxAmount Decimal?             @default(0) @db.Decimal(15, 2)
+  memo                 String
+  totalBeforeTax       Decimal              @db.Decimal(15, 2)
+  totalAmount          Decimal              @db.Decimal(15, 2)
+  orgCode              String               @db.VarChar(20)
+  org                  Org                  @relation(fields: [orgCode], references: [orgCode])
+  cancelledAt          DateTime?
+  cancelledBy          String?              @db.VarChar(20)
+  createdBy            String               @db.VarChar(20)
+  updatedBy            String               @db.VarChar(20)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  salesPaymentDetails  SalesPaymentDetail[]
 
   @@id([docNo, orgCode])
 }
@@ -1121,6 +1150,7 @@ model PaymentMethod {
 
 model SalesPaymentDetail {
   docNo             String       @db.VarChar(40)
+  lineNo            Int
   salesPayment      SalesPayment @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
   salesInvoice      SalesInvoice @relation(fields: [salesInvoiceDocNo, orgCode], references: [docNo, orgCode])
   salesInvoiceDocNo String       @db.VarChar(40)
@@ -1128,21 +1158,23 @@ model SalesPaymentDetail {
   orgCode           String       @db.VarChar(20)
   org               Org          @relation(fields: [orgCode], references: [orgCode])
 
-  @@id([docNo, salesInvoiceDocNo])
+  @@id([docNo, lineNo])
 }
 
 model SalesReturn {
-  docNo           String            @db.VarChar(40)
-  orgCode         String            @db.VarChar(20)
-  org             Org               @relation(fields: [orgCode], references: [orgCode])
-  date            DateTime          @db.Date
-  salesOrder      SalesOrder        @relation(fields: [salesOrderDocNo, orgCode], references: [docNo, orgCode])
-  salesOrderDocNo String            @db.VarChar(40)
-  taxRate         Decimal           @db.Decimal(15, 2)
-  taxAmount       Decimal           @db.Decimal(15, 2)
-  totalBeforeTax  Decimal           @db.Decimal(15, 2)
-  totalAmount     Decimal           @db.Decimal(15, 2)
-  salesReturnItem SalesReturnItem[]
+  docNo                String            @db.VarChar(40)
+  orgCode              String            @db.VarChar(20)
+  org                  Org               @relation(fields: [orgCode], references: [orgCode])
+  date                 DateTime          @db.Date
+  salesOrder           SalesOrder        @relation(fields: [salesOrderDocNo, orgCode], references: [docNo, orgCode])
+  salesOrderDocNo      String            @db.VarChar(40)
+  taxRate              Decimal?          @default(0) @db.Decimal(15, 2)
+  taxAmount            Decimal?          @default(0) @db.Decimal(15, 2)
+  withholdingTaxRate   Decimal?          @default(0) @db.Decimal(15, 2)
+  withholdingTaxAmount Decimal?          @default(0) @db.Decimal(15, 2)
+  totalBeforeTax       Decimal           @db.Decimal(15, 2)
+  totalAmount          Decimal           @db.Decimal(15, 2)
+  salesReturnItem      SalesReturnItem[]
 
   @@id([docNo, orgCode])
 }
@@ -1179,10 +1211,13 @@ model PurchaseOrder {
   status             PurchaseOrderStatus
   currencyCode       String              @db.VarChar(3)
   currency           Currency            @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
+  exchangeRate       Decimal             @default(1) @db.Decimal(15, 2)
   memo               String?
   top                Int?
-  taxRate            Decimal             @db.Decimal(15, 2)
-  taxAmount          Decimal             @db.Decimal(15, 2)
+  totalProduct       Decimal             @db.Decimal(15, 2)
+  totalService       Decimal             @db.Decimal(15, 2)
+  taxRate            Decimal?            @default(0) @db.Decimal(15, 2)
+  taxAmount          Decimal?            @default(0) @db.Decimal(15, 2)
   totalBeforeTax     Decimal             @db.Decimal(15, 2)
   totalAmount        Decimal             @db.Decimal(15, 2)
   cancelledAt        DateTime?
@@ -1193,6 +1228,7 @@ model PurchaseOrder {
   updatedAt          DateTime            @updatedAt
   purchaseOrderItems PurchaseOrderItem[]
   purchaseReturns    PurchaseReturn[]
+  PurchaseReceipt    PurchaseReceipt[]
 
   @@id([docNo, orgCode])
 }
@@ -1236,7 +1272,7 @@ model PurchaseReturn {
   orgCode             String               @db.VarChar(20)
   org                 Org                  @relation(fields: [orgCode], references: [orgCode])
   purchaseOrderDocNo  String               @db.VarChar(20)
-  amountBeforeTax     Decimal              @db.Decimal(15, 2)
+  totalBeforeTax      Decimal              @db.Decimal(15, 2)
   totalAmount         Decimal              @db.Decimal(15, 2)
   purchaseOrder       PurchaseOrder        @relation(fields: [purchaseOrderDocNo, orgCode], references: [docNo, orgCode])
   createdBy           String               @db.VarChar(20)
@@ -1344,94 +1380,144 @@ model StockTransferReceiptItem {
 }
 
 model PurchaseReceipt {
-  docNo          String   @db.VarChar(40)
-  deliveryNoteNo String   @db.VarChar(40)
-  date           DateTime @db.Date
-  updatedBy      String   @db.VarChar(20)
-  createdBy      String   @db.VarChar(20)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  org            Org      @relation(fields: [orgCode], references: [orgCode])
-  orgCode        String   @db.VarChar(20)
-
-  @@id([docNo, orgCode])
-}
-
-model PurchaseReceiptItem {
-  docNo              String
-  lineNo             Int
-  purchaseOrderDocNo String            @db.VarChar(40)
-  productCode        String            @db.VarChar(20)
-  packagingCode      String            @db.VarChar(10)
-  purchaseOrderItem  PurchaseOrderItem @relation(fields: [purchaseOrderDocNo, lineNo, orgCode], references: [docNo, lineNo, orgCode])
-  qty                Decimal           @db.Decimal(15, 2)
-  org                Org               @relation(fields: [orgCode], references: [orgCode])
-  orgCode            String            @db.VarChar(20)
-  updatedBy          String            @db.VarChar(20)
-  createdBy          String            @db.VarChar(20)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-
-  @@id([docNo, lineNo, orgCode])
-}
-
-model PurchaseInvoice {
-  docNo               String                @db.VarChar(20)
-  date                DateTime              @db.Date
-  dueDate             DateTime              @db.Date
-  org                 Org                   @relation(fields: [orgCode], references: [orgCode])
-  orgCode             String
-  updatedBy           String                @db.VarChar(20)
-  createdBy           String                @db.VarChar(20)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  PurchasePaymentItem PurchasePaymentItem[]
-
-  @@id([docNo, orgCode])
-}
-
-model PurchaseInvoiceItem {
-  docNo              String            @db.VarChar(40)
-  lineNo             Int
-  purchaseOrderDocNo String            @db.VarChar(40)
-  productCode        String            @db.VarChar(20)
-  packagingCode      String            @db.VarChar(10)
-  purchaseOrderItem  PurchaseOrderItem @relation(fields: [purchaseOrderDocNo, lineNo, orgCode], references: [docNo, lineNo, orgCode])
-  qty                Decimal           @db.Decimal(15, 2)
-  unitPrice          Decimal           @db.Decimal(15, 2)
-  amount             Decimal           @db.Decimal(15, 2)
-  org                Org               @relation(fields: [orgCode], references: [orgCode])
-  orgCode            String            @db.VarChar(20)
-
-  @@id([docNo, lineNo, orgCode])
-}
-
-model PurchasePayment {
   docNo                String                @db.VarChar(40)
+  deliveryNoteNo       String                @db.VarChar(40)
+  purchaseOrderDocNo   String                @db.VarChar(40)
+  purchaseOrder        PurchaseOrder         @relation(fields: [purchaseOrderDocNo, orgCode], references: [docNo, orgCode])
+  warehouseCode        String                @db.VarChar(20)
+  warehouse            Warehouse             @relation(fields: [warehouseCode, orgCode], references: [warehouseCode, orgCode])
   date                 DateTime              @db.Date
-  refNo                String                @db.VarChar(40)
+  memo                 String?
   updatedBy            String                @db.VarChar(20)
   createdBy            String                @db.VarChar(20)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   org                  Org                   @relation(fields: [orgCode], references: [orgCode])
-  orgCode              String
-  totalAmount          Decimal               @db.Decimal(15, 2)
-  purchasePaymentItems PurchasePaymentItem[]
+  orgCode              String                @db.VarChar(20)
+  purchaseReceiptItems PurchaseReceiptItem[]
+  PurchaseInvoice      PurchaseInvoice[]
 
   @@id([docNo, orgCode])
 }
 
-model PurchasePaymentItem {
+model PurchaseReceiptItem {
+  docNo               String                @db.VarChar(40)
+  lineNo              Int
+  purchaseReceipt     PurchaseReceipt       @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
+  purchaseOrderDocNo  String                @db.VarChar(40)
+  purchaseOrderLineNo Int
+  productCode         String                @db.VarChar(20)
+  product             Product               @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
+  packaging           Packaging             @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
+  packagingCode       String                @db.VarChar(10)
+  purchaseOrderItem   PurchaseOrderItem     @relation(fields: [purchaseOrderDocNo, purchaseOrderLineNo, orgCode], references: [docNo, lineNo, orgCode])
+  batchNo             String                @default("")
+  qty                 Decimal               @db.Decimal(15, 2)
+  unitCode            String                @db.VarChar(10)
+  unit                Unit                  @relation(fields: [unitCode, orgCode], references: [unitCode, orgCode])
+  unitQty             Decimal               @db.Decimal(15, 2)
+  totalUnitQty        Decimal               @db.Decimal(15, 2)
+  org                 Org                   @relation(fields: [orgCode], references: [orgCode])
+  orgCode             String                @db.VarChar(20)
+  PurchaseInvoiceItem PurchaseInvoiceItem[]
+
+  @@id([docNo, lineNo, orgCode])
+}
+
+model PurchaseInvoice {
+  docNo                String                @db.VarChar(20)
+  date                 DateTime              @db.Date
+  dueDate              DateTime              @db.Date
+  org                  Org                   @relation(fields: [orgCode], references: [orgCode])
+  orgCode              String
+  status               PurchaseInvoiceStatus
+  purchaseReceiptDocNo String                @db.VarChar(40)
+  purchaseReceipt      PurchaseReceipt       @relation(fields: [purchaseReceiptDocNo, orgCode], references: [docNo, orgCode])
+  taxRate              Decimal?              @db.Decimal(15, 2)
+  taxAmount            Decimal?              @db.Decimal(15, 2)
+  withholdingTaxRate   Decimal?              @db.Decimal(15, 2)
+  withholdingTaxAmount Decimal?              @db.Decimal(15, 2)
+  totalBeforeTax       Decimal               @db.Decimal(15, 2)
+  totalAmount          Decimal               @db.Decimal(15, 2)
+  cancelledAt          DateTime?
+  cancelledBy          String
+  updatedBy            String                @db.VarChar(20)
+  createdBy            String                @db.VarChar(20)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  purchaseInvoiceItems PurchaseInvoiceItem[]
+
+  @@id([docNo, orgCode])
+}
+
+model PurchaseInvoiceItem {
+  docNo                    String              @db.VarChar(40)
+  lineNo                   Int
+  purchaseInvoice          PurchaseInvoice     @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
+  purchaseReceiptDocNo     String              @db.VarChar(40)
+  purchaseReceiptLineNo    Int
+  purchaseReceiptItem      PurchaseReceiptItem @relation(fields: [purchaseReceiptDocNo, purchaseReceiptLineNo, orgCode], references: [docNo, lineNo, orgCode])
+  productCode              String              @db.VarChar(20)
+  packaging                Packaging           @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
+  product                  Product             @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
+  packagingCode            String              @db.VarChar(10)
+  qty                      Decimal             @db.Decimal(15, 2)
+  unitPrice                Decimal             @db.Decimal(15, 2)
+  amount                   Decimal             @db.Decimal(15, 2)
+  org                      Org                 @relation(fields: [orgCode], references: [orgCode])
+  orgCode                  String              @db.VarChar(20)
+  PurchaseOrderItem        PurchaseOrderItem?  @relation(fields: [purchaseOrderItemDocNo, purchaseOrderItemLineNo, purchaseOrderItemOrgCode], references: [docNo, lineNo, orgCode])
+  purchaseOrderItemDocNo   String?             @db.VarChar(40)
+  purchaseOrderItemLineNo  Int?
+  purchaseOrderItemOrgCode String?             @db.VarChar(20)
+
+  @@id([docNo, lineNo, orgCode])
+}
+
+enum PurchaseInvoiceStatus {
+  Open
+  Partial
+  Paid
+  Cancelled
+}
+
+model PurchasePayment {
+  docNo                  String                  @db.VarChar(40)
+  refNo                  String                  @db.VarChar(40)
+  date                   DateTime                @db.Date
+  currencyCode           String                  @db.VarChar(3)
+  currency               Currency                @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
+  exchangeRate           Decimal                 @db.Decimal(15, 2)
+  taxRate                Decimal?                @default(0) @db.Decimal(15, 2)
+  taxAmount              Decimal?                @default(0) @db.Decimal(15, 2)
+  withholdingTaxRate     Decimal?                @default(0) @db.Decimal(15, 2)
+  withholdingTaxAmount   Decimal?                @default(0) @db.Decimal(15, 2)
+  memo                   String
+  totalBeforeTax         Decimal                 @db.Decimal(15, 2)
+  totalAmount            Decimal                 @db.Decimal(15, 2)
+  orgCode                String                  @db.VarChar(20)
+  org                    Org                     @relation(fields: [orgCode], references: [orgCode])
+  cancelledAt            DateTime?
+  cancelledBy            String?                 @db.VarChar(20)
+  createdBy              String                  @db.VarChar(20)
+  updatedBy              String                  @db.VarChar(20)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  purchasePaymentDetails PurchasePaymentDetail[]
+
+  @@id([docNo, orgCode])
+}
+
+model PurchasePaymentDetail {
   docNo                String          @db.VarChar(40)
+  lineNo               Int
   purchasePayment      PurchasePayment @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
-  purchaseInvoice      PurchaseInvoice @relation(fields: [purchaseInvoiceDocNo, orgCode], references: [docNo, orgCode])
   amount               Decimal         @db.Decimal(15, 2)
   org                  Org             @relation(fields: [orgCode], references: [orgCode])
   orgCode              String          @db.VarChar(20)
   purchaseInvoiceDocNo String          @db.VarChar(40)
 
-  @@id([docNo, purchaseInvoiceDocNo])
+  @@id([docNo, lineNo])
 }
 
 model SKTD {

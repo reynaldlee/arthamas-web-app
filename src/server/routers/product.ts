@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { productTypeSchema } from "./productType";
 import { unitSchema } from "./unit";
 import { productGradeSchema } from "./productGrade";
@@ -89,15 +90,29 @@ export const productRouter = createProtectedRouter()
       portCode: z.string(),
     }),
     resolve: async ({ ctx, input }) => {
-      const data = await prisma.product.findMany({
+      const vessel = await prisma.vessel.findUnique({
         where: {
-          orgCode: ctx.user.orgCode,
-          vessels: {
-            some: {
-              vesselCode: input.vesselCode,
-            },
+          vesselCode_orgCode: {
+            vesselCode: input.vesselCode,
+            orgCode: ctx.user.orgCode,
           },
         },
+        select: { isAllProduct: true },
+      });
+
+      let where: Prisma.ProductFindManyArgs["where"] = {
+        orgCode: ctx.user.orgCode,
+      };
+
+      //filter if isAllProduct
+      if (!vessel?.isAllProduct) {
+        where.vessels = {
+          some: { vesselCode: input.vesselCode },
+        };
+      }
+
+      const data = await prisma.product.findMany({
+        where: where,
         include: {
           packagings: true,
           productCategory: true,

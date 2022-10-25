@@ -161,6 +161,7 @@ export const salesOrderRouter = createProtectedRouter()
         await prisma.salesOrderItem.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 
@@ -175,6 +176,7 @@ export const salesOrderRouter = createProtectedRouter()
         await prisma.salesOrderService.deleteMany({
           where: {
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
           },
         });
 

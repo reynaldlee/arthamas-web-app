@@ -37,6 +37,7 @@ import { pick } from "lodash";
 import { addDays, format } from "date-fns";
 import { Prisma } from "@prisma/client";
 import { DatePicker } from "@mui/x-date-pickers";
+import Edit from "@mui/icons-material/Edit";
 
 type SalesQuoteFormValues = z.infer<typeof salesQuoteSchema>;
 
@@ -44,7 +45,7 @@ type QueryParam = {
   docNo: string;
 };
 
-export default function SalesQuotesEdit() {
+export default function SalesQuotesDetail() {
   const router = useRouter();
   const { docNo } = router.query as QueryParam;
 
@@ -117,39 +118,39 @@ export default function SalesQuotesEdit() {
     });
   };
 
-  const handleAddMoreProduct = () => {
-    salesQuoteItems.append({
-      lineNo: salesQuoteItems.fields.length + 1,
-      desc: "",
-      qty: 1,
-      productCode: "",
-      amount: 0,
-      unitCode: "",
-      unitQty: 0,
-      totalUnitQty: 0,
-      unitPrice: 0,
-      packagingCode: "",
-    });
-  };
+  // const handleAddMoreProduct = () => {
+  //   salesQuoteItems.append({
+  //     lineNo: salesQuoteItems.fields.length + 1,
+  //     desc: "",
+  //     qty: 1,
+  //     productCode: "",
+  //     amount: 0,
+  //     unitCode: "",
+  //     unitQty: 0,
+  //     totalUnitQty: 0,
+  //     unitPrice: 0,
+  //     packagingCode: "",
+  //   });
+  // };
 
-  const handleAddMoreService = () => {
-    salesQuoteServices.append({
-      serviceCode: "",
-      amount: 0,
-      desc: "",
-      unitPrice: 0,
-    });
-  };
+  // const handleAddMoreService = () => {
+  //   salesQuoteServices.append({
+  //     serviceCode: "",
+  //     amount: 0,
+  //     desc: "",
+  //     unitPrice: 0,
+  //   });
+  // };
 
-  const handleRemoveProduct = (index: number) => {
-    salesQuoteItems.remove(index);
-    calculateProductSubtotal();
-  };
+  // const handleRemoveProduct = (index: number) => {
+  //   salesQuoteItems.remove(index);
+  //   calculateProductSubtotal();
+  // };
 
-  const handleRemoveService = (index: number) => {
-    salesQuoteServices.remove(index);
-    calculateServiceSubtotal();
-  };
+  // const handleRemoveService = (index: number) => {
+  //   salesQuoteServices.remove(index);
+  //   calculateServiceSubtotal();
+  // };
 
   const handleProductQtyChange = (index: number) => (value: number) => {
     const unitQty = watch(`salesQuoteItems.${index}.unitQty`);
@@ -233,6 +234,7 @@ export default function SalesQuotesEdit() {
         <Grid container gap={2} sx={{ pt: 2 }}>
           <Grid item md={4} xs={12}>
             <Autocomplete
+              disabled
               {...register("customerCode")}
               options={(customerList.data?.data || []).map((item) =>
                 pick(item, ["customerCode", "name"])
@@ -266,6 +268,7 @@ export default function SalesQuotesEdit() {
               defaultValue={"IDR"}
               select
               fullWidth
+              disabled
               label="Currency"
               {...register("currencyCode")}
             >
@@ -281,6 +284,7 @@ export default function SalesQuotesEdit() {
               fullWidth
               label="Exchange Rate"
               required
+              disabled
               value={watch("exchangeRate")}
               onValueChange={(value) => {
                 setValue("exchangeRate", value);
@@ -288,11 +292,6 @@ export default function SalesQuotesEdit() {
                 calculateServicesAmount();
               }}
             ></TextFieldNumber>
-            <Box>
-              <a href="#">
-                <strong>Get Rate from Bank Indonesia</strong>
-              </a>
-            </Box>
           </Grid>
         </Grid>
       </Paper>
@@ -302,6 +301,7 @@ export default function SalesQuotesEdit() {
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
               <DatePicker
+                disabled
                 onChange={(value) => {
                   setValue("date", value!);
                 }}
@@ -312,6 +312,7 @@ export default function SalesQuotesEdit() {
             </Grid>
             <Grid item md={4} xs={12}>
               <DatePicker
+                disabled
                 onChange={(value) => {
                   setValue("validUntil", value!);
                 }}
@@ -324,6 +325,7 @@ export default function SalesQuotesEdit() {
           <Grid container gap={2} sx={{ pt: 2 }}>
             <Grid item md={4} xs={12}>
               <Autocomplete
+                disabled
                 options={(portList.data?.data || []).map((item) => ({
                   id: item.portCode,
                   label: item.name,
@@ -357,6 +359,7 @@ export default function SalesQuotesEdit() {
             </Grid>
             <Grid item md={4} xs={12}>
               <Autocomplete
+                disabled
                 disableClearable
                 options={(selectedCustomer.data?.data?.vessels || []).map(
                   (item) => pick(item, ["vesselCode", "name"])
@@ -387,6 +390,7 @@ export default function SalesQuotesEdit() {
           <Grid container gap={2} sx={{ pt: 2 }}>
             <Grid item md={4} xs={12}>
               <Autocomplete
+                disabled
                 disablePortal
                 options={(warehouseList.data?.data || []).map((item) =>
                   pick(item, ["warehouseCode", "name"])
@@ -438,6 +442,7 @@ export default function SalesQuotesEdit() {
                     <TableRow key={index}>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Autocomplete
+                          disabled
                           fullWidth
                           disableClearable
                           options={(productList.data?.data || []).map(
@@ -475,6 +480,7 @@ export default function SalesQuotesEdit() {
 
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextField
+                          disabled
                           fullWidth
                           multiline
                           size="small"
@@ -491,6 +497,7 @@ export default function SalesQuotesEdit() {
                         >
                           <TextFieldNumber
                             fullWidth
+                            disabled
                             size="small"
                             onValueChange={handleProductQtyChange(index)}
                             placeholder="Qty"
@@ -502,6 +509,7 @@ export default function SalesQuotesEdit() {
                         <Autocomplete
                           fullWidth
                           size="small"
+                          disabled
                           disableClearable
                           options={
                             productList.data?.data.find(
@@ -516,17 +524,6 @@ export default function SalesQuotesEdit() {
                           getOptionLabel={(option) => {
                             return option.packagingCode;
                           }}
-                          value={productList.data?.data
-                            .find(
-                              (item) =>
-                                item.productCode ===
-                                salesQuoteItems.fields[index].productCode
-                            )
-                            ?.packagings?.find(
-                              (i) =>
-                                i.packagingCode ===
-                                watch(`salesQuoteItems.${index}.packagingCode`)
-                            )}
                           placeholder="Packaging"
                           onChange={(_, value) => {
                             setValue(
@@ -559,6 +556,7 @@ export default function SalesQuotesEdit() {
 
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
+                          disabled
                           size="small"
                           fullWidth
                           value={watch(`salesQuoteItems.${index}.unitPrice`)}
@@ -576,6 +574,7 @@ export default function SalesQuotesEdit() {
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
                           fullWidth
+                          disabled
                           contentEditable={false}
                           size="small"
                           placeholder="Volume"
@@ -596,34 +595,19 @@ export default function SalesQuotesEdit() {
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
                           fullWidth
+                          disabled
                           size="small"
                           placeholder="Amount"
                           contentEditable={false}
                           value={watch(`salesQuoteItems.${index}.amount`)}
                         />
                       </TableCell>
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <IconButton
-                          onClick={() => handleRemoveProduct(index)}
-                          color="error"
-                          size="medium"
-                        >
-                          <DeleteIcon fontSize="small"></DeleteIcon>
-                        </IconButton>
-                      </TableCell>
+                      <TableCell sx={{ padding: 0.5 }}></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-            <Button
-              variant="outlined"
-              onClick={handleAddMoreProduct}
-              sx={{ mt: 1 }}
-              startIcon={<AddIcon fontSize="small" />}
-            >
-              Add More
-            </Button>
 
             <Grid item xs={12} mt={2}>
               <Box display="flex" justifyContent="space-between">
@@ -656,6 +640,7 @@ export default function SalesQuotesEdit() {
                       <TableCell sx={{ padding: 0.5 }}>
                         <Autocomplete
                           fullWidth
+                          disabled
                           options={serviceList.data?.data || []}
                           isOptionEqualToValue={(opt, value) =>
                             opt.serviceCode === value.serviceCode
@@ -690,6 +675,7 @@ export default function SalesQuotesEdit() {
 
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextField
+                          disabled
                           fullWidth
                           multiline
                           size="small"
@@ -700,6 +686,7 @@ export default function SalesQuotesEdit() {
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
                           fullWidth
+                          disabled
                           size="small"
                           value={watch(`salesQuoteServices.${index}.unitPrice`)}
                           onValueChange={(value) => {
@@ -715,6 +702,7 @@ export default function SalesQuotesEdit() {
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
                           fullWidth
+                          disabled
                           contentEditable={false}
                           size="small"
                           name="amount"
@@ -722,28 +710,13 @@ export default function SalesQuotesEdit() {
                           value={watch(`salesQuoteServices.${index}.amount`)}
                         />
                       </TableCell>
-                      <TableCell sx={{ padding: 0.5 }}>
-                        <IconButton
-                          color="error"
-                          size="medium"
-                          onClick={() => handleRemoveService(index)}
-                        >
-                          <DeleteIcon fontSize="small"></DeleteIcon>
-                        </IconButton>
-                      </TableCell>
+                      <TableCell sx={{ padding: 0.5 }}></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </TableContainer>
-            <Button
-              variant="outlined"
-              onClick={handleAddMoreService}
-              sx={{ mt: 1 }}
-              startIcon={<AddIcon fontSize="small" />}
-            >
-              Add More
-            </Button>
+
             <Grid item xs={12} mt={2}>
               <Box display="flex" justifyContent="space-between">
                 <Typography variant="h4">Service Subtotal</Typography>
@@ -756,6 +729,7 @@ export default function SalesQuotesEdit() {
           <Grid container sx={{ py: 3 }} spacing={4}>
             <Grid item md={6} xs={12}>
               <TextField
+                disabled
                 label="Memo"
                 multiline
                 rows={4}
@@ -788,6 +762,7 @@ export default function SalesQuotesEdit() {
                 <Box display="flex" flexDirection={"row"} alignItems="center">
                   <Typography variant="h4">Tax</Typography>
                   <Autocomplete
+                    disabled
                     sx={{ ml: 4, width: 200 }}
                     size="small"
                     options={taxList.data?.data || []}
@@ -898,15 +873,17 @@ export default function SalesQuotesEdit() {
                 onClick={handleCancel}
                 disabled={createSalesQuote.isLoading}
               >
-                Cancel
+                Back
               </Button>
             </Grid>
             <Grid item>
               <Button
                 variant="contained"
                 disabled={createSalesQuote.isLoading}
-                startIcon={<SaveAltOutlinedIcon />}
-                onClick={handleSubmit(onSubmit)}
+                startIcon={<Edit />}
+                onClick={() => {
+                  router.push(`/sales/quotes/${docNo}/edit`);
+                }}
               >
                 Edit
               </Button>

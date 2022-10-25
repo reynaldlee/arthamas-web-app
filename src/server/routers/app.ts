@@ -1,3 +1,4 @@
+import { purchaseReceiptRouter } from "./purchaseReceipt";
 import { purchaseOrderRouter } from "./purchaseOrder";
 import { roleRouter } from "./role";
 import { salesOrderRouter } from "./salesOrder";
@@ -70,6 +71,7 @@ export const appRouter = createRouter()
   .merge("role.", roleRouter)
   .merge("profile.", profileRouter)
   .merge("purchaseOrder.", purchaseOrderRouter)
+  .merge("purchaseReceipt.", purchaseReceiptRouter)
   .merge("service.", serviceRouter)
   .merge("stockTransfer.", stockTransferRouter)
   .merge("truck.", truckRouter)

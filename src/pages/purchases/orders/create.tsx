@@ -93,6 +93,7 @@ export default function PurchaseOrderCreate() {
   };
 
   const onSubmit = (data: PurchaseOrderFormValues) => {
+    console.log(data);
     createPurchaseOrder.mutate(data);
   };
 
@@ -112,13 +113,13 @@ export default function PurchaseOrderCreate() {
   };
 
   const handleRemoveProduct = (index: number) => {
-    // purchaseOrderItems.remove(index);
-    // calculateProductSubtotal();
+    purchaseOrderItems.remove(index);
+    calculateProductSubtotal();
   };
 
   const handleRemoveService = (index: number) => {
-    // purchaseOrderServices.remove(index);
-    // calculateServiceSubtotal();
+    purchaseOrderServices.remove(index);
+    calculateServiceSubtotal();
   };
 
   const handleProductQtyChange = (index: number) => (value: number) => {
@@ -524,6 +525,7 @@ export default function PurchaseOrderCreate() {
                           size="small"
                           placeholder="Volume"
                           readOnly
+                          disabled
                           value={watch(
                             `purchaseOrderItems.${index}.totalUnitQty`
                           )}
@@ -544,6 +546,7 @@ export default function PurchaseOrderCreate() {
                           fullWidth
                           size="small"
                           placeholder="Amount"
+                          disabled
                           contentEditable={false}
                           value={watch(`purchaseOrderItems.${index}.amount`)}
                         />
