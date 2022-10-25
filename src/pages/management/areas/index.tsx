@@ -11,11 +11,11 @@ import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 
 export default function AreaIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["area.findAll"]);
+  const { data, refetch, isLoading } = trpc.area.findAll.useQuery();
 
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["area.delete"]);
+  const { mutate: deleteData } = trpc.area.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {

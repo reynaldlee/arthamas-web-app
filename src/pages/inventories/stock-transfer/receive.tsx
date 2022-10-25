@@ -48,26 +48,27 @@ export default function StockTransferReceive() {
     name: "stockTransferItems",
     control: stockTransferForm.control,
   });
-  const truckList = trpc.useQuery(["truck.findAll"]);
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
-  const productList = trpc.useQuery(["product.findAll"]);
+  const truckList = trpc.truck.findAll.useQuery();
+  const warehouseList = trpc.warehouse.findAll.useQuery();
+  const productList = trpc.product.findAll.useQuery();
 
-  const { data } = trpc.useQuery(["stockTransfer.find", docNo], {
-    enabled: !!docNo,
-    onSuccess: (data) => {
-      stockTransferForm.reset({
-        date: data.data?.date,
-        driverName: data.data?.driverName!,
-        fromWarehouseCode: data.data?.fromWarehouseCode,
-        toWarehouseCode: data.data?.toWarehouseCode,
-        notes: data.data?.notes,
-        truckCode: data.data?.truckCode,
-        stockTransferItems: data.data?.stockTransferItems!,
-      });
-    },
-  });
+    const { data } = trpc.stockTransfer.find.useQuery(docNo, {
+        enabled: !!docNo,
+        onSuccess: (data) => {
+            stockTransferForm.reset({
+                date: data.data?.date,
+                driverName: data.data?.driverName!,
+                fromWarehouseCode: data.data?.fromWarehouseCode,
+                toWarehouseCode: data.data?.toWarehouseCode,
+                notes: data.data?.notes,
+                truckCode: data.data?.truckCode,
+                stockTransferItems: data.data?.stockTransferItems!,
+            });
+        },
+        trpc: {}
+    });
 
-  const createStockTransfer = trpc.useMutation(["stockTransfer.create"]);
+  const createStockTransfer = trpc.stockTransfer.create.useMutation();
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to exit?")) {

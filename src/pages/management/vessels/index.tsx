@@ -11,10 +11,10 @@ import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 
 export default function VesselIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["vessel.findAll"]);
+  const { data, refetch, isLoading } = trpc.vessel.findAll.useQuery();
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["vessel.delete"]);
+  const { mutate: deleteData } = trpc.vessel.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {

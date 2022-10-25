@@ -24,11 +24,11 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function PurchaseOrderIndex() {
-  const { data, isLoading } = trpc.useQuery(["purchaseOrder.findAll"]);
+  const { data, isLoading } = trpc.purchaseOrder.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const { mutate: cancelOrder } = trpc.useMutation(["purchaseOrder.cancel"]);
+  const { mutate: cancelOrder } = trpc.purchaseOrder.cancel.useMutation();
 
   return (
     <MainLayout>

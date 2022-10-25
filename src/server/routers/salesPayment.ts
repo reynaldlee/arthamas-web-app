@@ -1,13 +1,15 @@
+import { protectedProcedure } from "./../trpc";
 import { TRPCError } from "@trpc/server";
-import { Prisma } from "@prisma/client";
+
 import { generateDocNo } from "../../utils/docNo";
-import { format } from "date-fns";
+
 import { serviceSchema } from "./service";
 import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
+import { router } from "../trpc";
 
 export const salesPaymentItemSchema = z.object({
   lineNo: z.number().min(1),
@@ -39,58 +41,55 @@ export const salesPaymentSchema = z.object({
   memo: z.string().optional().nullable(),
 });
 
-export const salesPaymentRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.salesPayment.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          salesDelivery: true,
-          salesOrder: true,
-          customer: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+export const salesPaymentRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.salesPayment.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        salesDelivery: true,
+        salesOrder: true,
+        customer: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.salesPayment.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-        include: {
-          salesOrder: true,
-          customer: true,
-          salesDelivery: true,
-          salesPaymentItems: {
-            include: {
-              product: true,
-              packaging: true,
-            },
-          },
-          salesPaymentServices: {
-            include: {
-              service: true,
-            },
-          },
-        },
-      });
+    return { data };
+  }),
 
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: salesPaymentSchema,
-    resolve: async ({ input, ctx }) => {
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.salesPayment.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
+        },
+      },
+      include: {
+        salesOrder: true,
+        customer: true,
+        salesDelivery: true,
+        salesPaymentItems: {
+          include: {
+            product: true,
+            packaging: true,
+          },
+        },
+        salesPaymentServices: {
+          include: {
+            service: true,
+          },
+        },
+      },
+    });
+
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(salesPaymentSchema)
+    .mutation(async ({ input, ctx }) => {
       const { salesPaymentItems, salesPaymentServices, ...salesPayment } =
         input;
       const docNo = generateDocNo("INV-");
@@ -164,14 +163,15 @@ export const salesPaymentRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: salesPaymentSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: salesPaymentSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { salesPaymentItems, salesPaymentServices, ...updatedField } =
         fields;
@@ -217,11 +217,11 @@ export const salesPaymentRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const result = await prisma.$transaction(async (prisma) => {
         const data = await prisma.salesPayment.update({
           where: {
@@ -241,26 +241,5 @@ export const salesPaymentRouter = createProtectedRouter()
       });
 
       return { data: result };
-    },
-  });
-
-// async function updateSalesQuoteStatus(
-//   prisma: Prisma.TransactionClient,
-//   salesQuote: { orgCode: string; docNo: string }
-// ) {
-//   const countSO = await prisma.salesPayment.count({
-//     where: {
-//       salesQuoteDocNo: salesQuote.docNo,
-//       orgCode: salesQuote.orgCode,
-//     },
-//   });
-
-//   await prisma.salesQuote.update({
-//     data: {
-//       status: countSO > 0 ? "Completed" : "Open",
-//     },
-//     where: {
-//       docNo_orgCode: salesQuote,
-//     },
-//   });
-// }
+    }),
+});

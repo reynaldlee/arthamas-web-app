@@ -45,8 +45,8 @@ export default function PurchaseReceiptCreate() {
   const router = useRouter();
   const [editReceiptItem, setEditReceiptItem] = useState<undefined | number>();
 
-  const purchaseOrderList = trpc.useQuery(["purchaseOrder.findAllForReceipt"]);
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
+  const purchaseOrderList = trpc.purchaseOrder.findAllForReceipt.useQuery();
+  const warehouseList = trpc.warehouse.findAll.useQuery();
 
   const { register, watch, control, setValue, reset, handleSubmit } =
     useForm<PurchaseReceiptFormValues>();
@@ -62,7 +62,7 @@ export default function PurchaseReceiptCreate() {
     setEditReceiptItem(index);
   };
 
-  const createPurchaseReceipt = trpc.useMutation(["purchaseReceipt.create"], {
+  const createPurchaseReceipt = trpc.purchaseReceipt.create.useMutation({
     onError: (err) => {
       console.log(err);
     },
@@ -73,18 +73,19 @@ export default function PurchaseReceiptCreate() {
 
   const selectedPurchaseOrderDocNo = watch("purchaseOrderDocNo");
 
-  const selectedPO = trpc.useQuery(
-    ["purchaseOrder.find", selectedPurchaseOrderDocNo],
-    {
-      enabled: !!selectedPurchaseOrderDocNo,
-      onSuccess(data) {
-        reset({
-          date: new Date(),
-          purchaseOrderDocNo: data.data?.docNo,
-          warehouseCode: data.data?.warehouseCode,
-        });
-      },
-    }
+  const selectedPO = trpc.purchaseOrder.find.useQuery(
+    selectedPurchaseOrderDocNo,
+      {
+          enabled: !!selectedPurchaseOrderDocNo,
+          onSuccess(data) {
+              reset({
+                  date: new Date(),
+                  purchaseOrderDocNo: data.data?.docNo,
+                  warehouseCode: data.data?.warehouseCode,
+              });
+          },
+          trpc: {}
+      }
   );
 
   const handleAddMoreItem = () => {

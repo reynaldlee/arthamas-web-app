@@ -15,15 +15,11 @@ import { useRouter } from "next/router";
 import { Box, Grid, Paper, Typography } from "@mui/material";
 
 export default function Sp2bCreate() {
-  const { data, isLoading, refetch } = trpc.useQuery([
-    "goodsReleaseOrder.findAll",
-  ]);
+  const { data, isLoading, refetch } = trpc.goodsReleaseOrder.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const cancelGoodsReleaseOrder = trpc.useMutation([
-    "goodsReleaseOrder.cancel",
-  ]);
+  const cancelGoodsReleaseOrder = trpc.goodsReleaseOrder.cancel.useMutation();
 
   const handleCancel = (docNo: string) => {
     if (window.confirm(`Are you sure you want to cancel SP2B ${docNo}`)) {

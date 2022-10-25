@@ -1,14 +1,13 @@
+import { protectedProcedure, router } from "./../trpc";
 import { customerSchema } from "./customer";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import { generateDocNo } from "../../utils/docNo";
-import { format } from "date-fns";
 import { serviceSchema } from "./service";
 import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
 import { currencySchema } from "./currency";
 
 export const salesInvoiceItemSchema = z.object({
@@ -54,23 +53,21 @@ export const salesInvoiceSchema = z.object({
     .default([]),
 });
 
-export const salesInvoiceRouter = createProtectedRouter()
-  .query("findAll", {
-    input: z
+const findAllSalesInvoiceSchema = z
+  .object({
+    filters: z
       .object({
-        filters: z
-          .object({
-            currencyCode: currencySchema.shape.currencyCode
-              .optional()
-              .nullable(),
-            customerCode: customerSchema.shape.customerCode
-              .optional()
-              .nullable(),
-          })
-          .optional(),
+        currencyCode: currencySchema.shape.currencyCode.optional().nullable(),
+        customerCode: customerSchema.shape.customerCode.optional().nullable(),
       })
       .optional(),
-    resolve: async ({ input, ctx }) => {
+  })
+  .optional();
+
+export const salesInvoiceRouter = router({
+  findAll: protectedProcedure
+    .input(findAllSalesInvoiceSchema)
+    .query(async ({ input, ctx }) => {
       const where: Prisma.SalesInvoiceWhereInput = {
         orgCode: ctx.user.orgCode,
       };
@@ -94,42 +91,40 @@ export const salesInvoiceRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.salesInvoice.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-        include: {
-          salesOrder: true,
-          customer: true,
-          salesDelivery: true,
-          salesInvoiceItems: {
-            include: {
-              product: true,
-              packaging: true,
-            },
-          },
-          salesInvoiceServices: {
-            include: {
-              service: true,
-            },
-          },
-        },
-      });
+    }),
 
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: salesInvoiceSchema,
-    resolve: async ({ input, ctx }) => {
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.salesInvoice.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
+        },
+      },
+      include: {
+        salesOrder: true,
+        customer: true,
+        salesDelivery: true,
+        salesInvoiceItems: {
+          include: {
+            product: true,
+            packaging: true,
+          },
+        },
+        salesInvoiceServices: {
+          include: {
+            service: true,
+          },
+        },
+      },
+    });
+
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(salesInvoiceSchema)
+    .mutation(async ({ input, ctx }) => {
       const { salesInvoiceItems, salesInvoiceServices, ...salesInvoice } =
         input;
       const docNo = generateDocNo("INV-");
@@ -200,14 +195,16 @@ export const salesInvoiceRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: salesInvoiceSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: salesInvoiceSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { salesInvoiceItems, salesInvoiceServices, ...updatedField } =
         fields;
@@ -253,11 +250,11 @@ export const salesInvoiceRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const result = await prisma.$transaction(async (prisma) => {
         await prisma.salesDelivery.updateMany({
           data: {
@@ -289,8 +286,8 @@ export const salesInvoiceRouter = createProtectedRouter()
       });
 
       return { data: result };
-    },
-  });
+    }),
+});
 
 // async function updateSalesQuoteStatus(
 //   prisma: Prisma.TransactionClient,

@@ -1,6 +1,7 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const taxSchema = z.object({
   taxCode: z.string().max(10),
@@ -8,18 +9,17 @@ export const taxSchema = z.object({
   taxRate: z.number().min(0).max(1),
 });
 
-export const taxRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.tax.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: taxSchema.shape.taxCode,
-    resolve: async ({ ctx, input }) => {
+export const taxRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.tax.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure
+    .input(taxSchema.shape.taxCode)
+    .mutation(async ({ ctx, input }) => {
       const data = await prisma.tax.findUnique({
         where: {
           taxCode_orgCode: {
@@ -29,11 +29,11 @@ export const taxRouter = createProtectedRouter()
         },
       });
       return { data };
-    },
-  })
-  .mutation("create", {
-    input: taxSchema,
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  create: protectedProcedure
+    .input(taxSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.tax.create({
         data: {
           ...input,
@@ -44,11 +44,11 @@ export const taxRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: taxSchema,
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  update: protectedProcedure
+    .input(taxSchema)
+    .mutation(async ({ input, ctx }) => {
       const { taxCode, ...updatedFields } = input;
       const data = await prisma.tax.update({
         data: {
@@ -64,11 +64,10 @@ export const taxRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: taxSchema.shape.taxCode,
-    resolve: async ({ input, ctx }) => {
+    }),
+  delete: protectedProcedure
+    .input(taxSchema.shape.taxCode)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.tax.delete({
         where: {
           taxCode_orgCode: {
@@ -79,5 +78,5 @@ export const taxRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

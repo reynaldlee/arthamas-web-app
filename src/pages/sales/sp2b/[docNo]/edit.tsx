@@ -43,11 +43,14 @@ export default function Sp2bEdit() {
   const router = useRouter();
   const { docNo } = router.query as QueryParams;
 
-  const goodsReleaseOrder = trpc.useQuery(["goodsReleaseOrder.find", docNo]);
+  const goodsReleaseOrder = trpc.goodsReleaseOrder.find.useQuery(docNo);
 
-  const salesOrder = trpc.useQuery(
-    ["salesOrder.find", goodsReleaseOrder.data?.data?.salesOrderDocNo],
-    { enabled: !!goodsReleaseOrder.data }
+  const salesOrder = trpc.salesOrder.find.useQuery(
+    goodsReleaseOrder.data?.data?.salesOrderDocNo,
+      {
+          enabled: !!goodsReleaseOrder.data,
+          trpc: {}
+      }
   );
 
   const salesOrderDocNo = salesOrder.data?.data?.docNo;
@@ -60,15 +63,14 @@ export default function Sp2bEdit() {
     name: "goodsReleaseOrderItems",
   });
 
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
+  const warehouseList = trpc.warehouse.findAll.useQuery();
 
   const [selectedWarehouse, setSelectedWarehouse] = useState<{
     id: string;
     label: string;
   }>({ id: "", label: "" });
 
-  const updateGoodsReleaseOrder = trpc.useMutation(
-    ["goodsReleaseOrder.update"],
+  const updateGoodsReleaseOrder = trpc.goodsReleaseOrder.update.useMutation(
     {
       onError: (err) => {
         console.log(err);

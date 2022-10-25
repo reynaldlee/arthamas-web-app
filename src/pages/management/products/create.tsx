@@ -26,11 +26,11 @@ export default function ProductCreatePage() {
 
   const { register, handleSubmit } = useForm<ProductFormValues>();
 
-  const productGrade = trpc.useQuery(["productGrade.findAll"]);
-  const productType = trpc.useQuery(["productType.findAll"]);
-  const productCategory = trpc.useQuery(["productCategory.findAll"]);
+  const productGrade = trpc.productGrade.findAll.useQuery();
+  const productType = trpc.productType.findAll.useQuery();
+  const productCategory = trpc.productCategory.findAll.useQuery();
 
-  const createProductMutation = trpc.useMutation(["product.create"], {
+  const createProductMutation = trpc.product.create.useMutation({
     onSuccess: () => {
       router.push("/management/products");
     },

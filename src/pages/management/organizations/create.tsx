@@ -16,7 +16,7 @@ export default function OrganizationCreatePage() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["org.create"], {
+  } = trpc.org.create.useMutation({
     onSuccess: () => {
       router.push("/management/organizations");
     },

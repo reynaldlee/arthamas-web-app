@@ -1,6 +1,6 @@
+import { protectedProcedure, router } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
 import { customerGroupSchema } from "./customerGroup";
 
 export const customerSchema = z.object({
@@ -15,47 +15,46 @@ export const customerSchema = z.object({
   customerGroupCode: z.string().optional().nullable(),
 });
 
-export const customerRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.customer.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: { customerGroup: true },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      console.log(input);
-      const data = await prisma.customer.findUnique({
-        where: {
-          customerCode_orgCode: {
-            customerCode: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
+export const customerRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.customer.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: { customerGroup: true },
+    });
+    return { data };
+  }),
 
-        include: {
-          vessels: true,
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    console.log(input);
+    const data = await prisma.customer.findUnique({
+      where: {
+        customerCode_orgCode: {
+          customerCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
+      },
 
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: customerSchema.passthrough().extend({
-      customerGroup: customerGroupSchema
-        .pick({
-          customerGroupCode: true,
-          name: true,
-        })
-        .nullable()
-        .optional(),
-    }),
-    resolve: async ({ input, ctx }) => {
+      include: {
+        vessels: true,
+      },
+    });
+
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(
+      customerSchema.passthrough().extend({
+        customerGroup: customerGroupSchema
+          .pick({
+            customerGroupCode: true,
+            name: true,
+          })
+          .nullable()
+          .optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.customer.create({
         data: {
           customerCode: input.customerCode,
@@ -72,18 +71,20 @@ export const customerRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: customerSchema
-      .omit({
-        customerCode: true,
-      })
-      .partial()
-      .extend({
-        customerCode: customerSchema.shape.customerCode,
-      }),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  update: protectedProcedure
+    .input(
+      customerSchema
+        .omit({
+          customerCode: true,
+        })
+        .partial()
+        .extend({
+          customerCode: customerSchema.shape.customerCode,
+        })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { customerCode, ...updatedFields } = input;
       const data = await prisma.customer.update({
         data: {
@@ -99,11 +100,11 @@ export const customerRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.customer.delete({
         where: {
           customerCode_orgCode: {
@@ -114,5 +115,5 @@ export const customerRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

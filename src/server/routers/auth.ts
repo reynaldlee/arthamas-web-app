@@ -1,18 +1,20 @@
+import { publicProcedure, router } from "./../trpc";
 import { JwtPayload } from "./../../types/user.types";
 import { prisma } from "@/prisma/index";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createRouter } from "../createRouter";
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
 
-export const authRouter = createRouter()
-  .mutation("login", {
-    input: z.object({
-      username: z.string(),
-      password: z.string(),
-    }),
-    resolve: async ({ input, ctx }) => {
+export const authRouter = router({
+  login: publicProcedure
+    .input(
+      z.object({
+        username: z.string(),
+        password: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.user.findFirst({
         where: {
           username: input.username,
@@ -53,23 +55,5 @@ export const authRouter = createRouter()
       return {
         accessToken: accessToken,
       };
-    },
-  })
-  .mutation("changeOrg", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
-      const jwtPayload: JwtPayload = {
-        id: ctx.user!.id,
-        username: ctx.user!.username,
-        orgCode: input,
-      };
-
-      const accessToken = jwt.sign(jwtPayload, process.env.JWT_SECRET!, {
-        expiresIn: process.env.JWT_EXPIRES_IN!,
-      });
-
-      return {
-        accessToken: accessToken,
-      };
-    },
-  });
+    }),
+});

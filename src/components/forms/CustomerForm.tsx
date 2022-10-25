@@ -26,10 +26,13 @@ export default function CustomerForm({
   isEdit,
   defaultValues,
 }: CustomerFormProps) {
-  const customerGroupData = trpc.useQuery(["customerGroup.findAll"]);
-  const selectedCustomerGroup = trpc.useQuery(
-    ["customerGroup.find", defaultValues?.customerGroupCode!],
-    { enabled: !!defaultValues?.customerGroupCode }
+  const customerGroupData = trpc.customerGroup.findAll.useQuery();
+  const selectedCustomerGroup = trpc.customerGroup.find.useQuery(
+    defaultValues?.customerGroupCode!,
+    {
+      enabled: !!defaultValues?.customerGroupCode,
+      trpc: {},
+    }
   );
 
   const {

@@ -1,3 +1,4 @@
+import { router, protectedProcedure } from "./../trpc";
 import { TRPCClientError } from "@trpc/client";
 import { Prisma } from "@prisma/client";
 import { generateDocNo } from "../../utils/docNo";
@@ -36,64 +37,61 @@ export const goodsReleaseOrderSchema = z.object({
     .default([]),
 });
 
-export const goodsReleaseOrderRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.goodsReleaseOrder.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          salesOrder: {
-            include: {
-              customer: { select: { name: true } },
-            },
+export const goodsReleaseOrderRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.goodsReleaseOrder.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        salesOrder: {
+          include: {
+            customer: { select: { name: true } },
           },
-          warehouse: true,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+        warehouse: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.goodsReleaseOrder.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.goodsReleaseOrder.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
+        },
+      },
+      include: {
+        warehouse: true,
+        salesOrder: {
+          include: {
+            customer: true,
           },
         },
-        include: {
-          warehouse: true,
-          salesOrder: {
-            include: {
-              customer: true,
-            },
-          },
-          goodsReleaseOrderItems: {
-            include: {
-              product: {
-                include: {
-                  productGrade: true,
-                  productType: true,
-                  productCategory: true,
-                },
+        goodsReleaseOrderItems: {
+          include: {
+            product: {
+              include: {
+                productGrade: true,
+                productType: true,
+                productCategory: true,
               },
-              productPackaging: true,
             },
+            productPackaging: true,
           },
         },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: goodsReleaseOrderSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(goodsReleaseOrderSchema)
+    .mutation(async ({ input, ctx }) => {
       const { goodsReleaseOrderItems, ...goodsRelease } = input;
       const docNo = generateDocNo("GR-");
 
@@ -131,14 +129,16 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: goodsReleaseOrderSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: goodsReleaseOrderSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { goodsReleaseOrderItems, ...others } = fields;
 
@@ -192,11 +192,11 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
       console.log("c");
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.goodsReleaseOrder.update({
         data: {
           status: "Cancelled",
@@ -212,5 +212,5 @@ export const goodsReleaseOrderRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

@@ -17,9 +17,9 @@ export default function PortEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["product.find", id]);
+  const { data } = trpc.product.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["product.update"], {
+  const updateMutatation = trpc.product.update.useMutation({
     onSuccess: () => {
       router.push("/management/products");
     },

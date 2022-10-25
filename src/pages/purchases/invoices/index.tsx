@@ -23,7 +23,7 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function PurchaseInvoiceIndex() {
-  const { data, isLoading } = trpc.useQuery(["purchaseReceipt.findAll"]);
+  const { data, isLoading } = trpc.purchaseReceipt.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 

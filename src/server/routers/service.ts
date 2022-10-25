@@ -1,7 +1,8 @@
+import { protectedProcedure } from "./../trpc";
 import { currencySchema } from "./currency";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const serviceSchema = z.object({
   serviceCode: z.string().max(20),
@@ -10,32 +11,29 @@ export const serviceSchema = z.object({
   currencyCode: currencySchema.shape.currencyCode,
 });
 
-export const serviceRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.service.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.service.findUnique({
-        where: {
-          serviceCode_orgCode: {
-            serviceCode: input,
-            orgCode: ctx.user.orgCode,
-          },
+export const serviceRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.service.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.service.findUnique({
+      where: {
+        serviceCode_orgCode: {
+          serviceCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: serviceSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(serviceSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.service.create({
         data: {
           ...input,
@@ -46,13 +44,14 @@ export const serviceRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: serviceSchema.partial().omit({ serviceCode: true }).extend({
-      serviceCode: serviceSchema.shape.serviceCode,
     }),
-    resolve: async ({ input, ctx }) => {
+  update: protectedProcedure
+    .input(
+      serviceSchema.partial().omit({ serviceCode: true }).extend({
+        serviceCode: serviceSchema.shape.serviceCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { serviceCode, ...updatedFields } = input;
       const data = await prisma.service.update({
         data: {
@@ -68,11 +67,11 @@ export const serviceRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.service.delete({
         where: {
           serviceCode_orgCode: {
@@ -83,5 +82,5 @@ export const serviceRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

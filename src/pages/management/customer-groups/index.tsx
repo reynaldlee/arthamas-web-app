@@ -11,10 +11,10 @@ import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 
 export default function CustomerIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["customerGroup.findAll"]);
+  const { data, refetch, isLoading } = trpc.customerGroup.findAll.useQuery();
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["customerGroup.delete"]);
+  const { mutate: deleteData } = trpc.customerGroup.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {

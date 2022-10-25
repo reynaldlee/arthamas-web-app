@@ -24,11 +24,11 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function SalesOrderIndex() {
-  const { data, isLoading } = trpc.useQuery(["salesOrder.findAll"]);
+  const { data, isLoading } = trpc.salesOrder.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const { mutate: cancelOrder } = trpc.useMutation(["salesOrder.cancel"]);
+  const { mutate: cancelOrder } = trpc.salesOrder.cancel.useMutation();
   //
   // const handleDelete = (id: string) => () => {
   //   deleteData(id, {

@@ -38,7 +38,7 @@ type ProductPackagingFormValues = z.infer<typeof productPackagingSchema>;
 export default function InventoryIndex() {
   const router = useRouter();
 
-  const { data, refetch, isLoading } = trpc.useQuery(["inventory.findAll"]);
+  const { data, refetch, isLoading } = trpc.inventory.findAll.useQuery();
 
   return (
     <MainLayout>

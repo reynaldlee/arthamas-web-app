@@ -15,7 +15,7 @@ export default function CustomerCreatePage() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["customerGroup.create"], {
+  } = trpc.customerGroup.create.useMutation({
     onSuccess: () => {
       router.push("/management/customer-groups");
     },

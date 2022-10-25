@@ -17,9 +17,9 @@ export default function TruckEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["truck.find", id]);
+  const { data } = trpc.truck.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["truck.update"], {
+  const updateMutatation = trpc.truck.update.useMutation({
     onSuccess: () => {
       router.push("/management/trucks");
     },

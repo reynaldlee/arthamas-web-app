@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: Props) => {
   const [orgCode, setOrgCode] = useState("");
   const [username, setUsername] = useState("");
 
-  const changeOrgMutation = trpc.useMutation(["auth.changeOrg"]);
+  const changeOrgMutation = trpc.auth.changeOrg.useMutation();
 
   useEffect(() => {
     const { session } = nookies.parseCookies();

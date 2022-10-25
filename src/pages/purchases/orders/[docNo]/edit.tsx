@@ -51,7 +51,7 @@ export default function PurchaseOrderEdit() {
       },
     });
 
-  const { data, isLoading } = trpc.useQuery(["purchaseOrder.find", docNo]);
+  const { data, isLoading } = trpc.purchaseOrder.find.useQuery(docNo);
 
   useEffect(() => {
     if (!data) return;
@@ -75,27 +75,31 @@ export default function PurchaseOrderEdit() {
     });
   }, [data, reset]);
 
-  const supplierList = trpc.useQuery(["supplier.findAll"]);
-  const currencyList = trpc.useQuery(["currency.findAll"]);
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
-  const productList = trpc.useQuery(["product.findAll"]);
+  const supplierList = trpc.supplier.findAll.useQuery();
+  const currencyList = trpc.currency.findAll.useQuery();
+  const warehouseList = trpc.warehouse.findAll.useQuery();
+  const productList = trpc.product.findAll.useQuery();
 
   const selectedWarehouseCode = watch("warehouseCode");
   const selectedSupplierCode = watch("supplierCode");
 
-  const selectedWarehouse = trpc.useQuery(
-    ["warehouse.find", selectedWarehouseCode],
-    { enabled: !!selectedWarehouseCode }
+  const selectedWarehouse = trpc.warehouse.find.useQuery(
+    selectedWarehouseCode,
+      {
+          enabled: !!selectedWarehouseCode,
+          trpc: {}
+      }
   );
 
-  const selectedSupplier = trpc.useQuery(
-    ["supplier.find", selectedSupplierCode],
-    {
-      enabled: !!selectedSupplierCode,
-    }
+  const selectedSupplier = trpc.supplier.find.useQuery(
+    selectedSupplierCode,
+      {
+          enabled: !!selectedSupplierCode,
+          trpc: {}
+      }
   );
 
-  const updatePurchaseOrder = trpc.useMutation(["purchaseOrder.update"], {
+  const updatePurchaseOrder = trpc.purchaseOrder.update.useMutation({
     onError: (err) => {
       console.log(err);
     },

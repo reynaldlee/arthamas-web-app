@@ -1,9 +1,11 @@
+import { protectedProcedure } from "./../trpc";
 import { TRPCError } from "@trpc/server";
 import { generateDocNo } from "../../utils/docNo";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
 import { pick } from "lodash";
+import { router } from "../trpc";
 
 // const a: Prisma.SalesQuoteServiceCreateManySalesQuoteInput;
 
@@ -34,84 +36,80 @@ export const salesDeliverySchema = z.object({
     .nullable(),
 });
 
-export const salesDeliveryRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.salesDelivery.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          warehouse: true,
-          salesOrder: {
-            include: {
-              customer: true,
-              port: true,
-              vessel: true,
-            },
+export const salesDeliveryRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.salesDelivery.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        warehouse: true,
+        salesOrder: {
+          include: {
+            customer: true,
+            port: true,
+            vessel: true,
           },
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.salesDelivery.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
-          },
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.salesDelivery.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
         },
-        include: {
-          truck: true,
-          salesDeliveryItems: {
-            include: {
-              salesOrderItem: {
-                include: {
-                  product: true,
-                  packaging: true,
-                },
+      },
+      include: {
+        truck: true,
+        salesDeliveryItems: {
+          include: {
+            salesOrderItem: {
+              include: {
+                product: true,
+                packaging: true,
               },
             },
           },
-          salesOrder: {
-            include: {
-              customer: true,
-              port: true,
-              vessel: true,
-            },
+        },
+        salesOrder: {
+          include: {
+            customer: true,
+            port: true,
+            vessel: true,
           },
         },
-      });
-      return { data };
-    },
-  })
-  .query("findOpenStatus", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.salesDelivery.findMany({
-        where: {
-          orgCode: ctx.user.orgCode,
-          status: "Open",
-        },
-        include: {
-          warehouse: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      },
+    });
+    return { data };
+  }),
 
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: salesDeliverySchema,
-    resolve: async ({ input, ctx }) => {
+  findOpenStatus: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.salesDelivery.findMany({
+      where: {
+        orgCode: ctx.user.orgCode,
+        status: "Open",
+      },
+      include: {
+        warehouse: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(salesDeliverySchema)
+    .mutation(async ({ input, ctx }) => {
       const { salesDeliveryItems, ...salesDelivery } = input;
       const docNo = generateDocNo("DN-");
 
@@ -201,14 +199,16 @@ export const salesDeliveryRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: salesDeliverySchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: salesDeliverySchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { salesDeliveryItems, ...updatedField } = fields;
 
@@ -258,11 +258,10 @@ export const salesDeliveryRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.salesDelivery.update({
         data: {
           status: "Cancelled",
@@ -278,5 +277,5 @@ export const salesDeliveryRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

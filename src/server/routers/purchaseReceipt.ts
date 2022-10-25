@@ -1,3 +1,4 @@
+import { protectedProcedure } from "./../trpc";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { warehouseSchema } from "./warehouse";
@@ -6,11 +7,12 @@ import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
 import {
   getPurchaseOrderToReceiptSummary,
   purchaseOrderItemSchema,
 } from "./purchaseOrder";
+import { router } from "../trpc";
 
 export const purchaseReceiptItemSchema = z.object({
   productCode: productSchema.shape.productCode,
@@ -32,67 +34,63 @@ export const purchaseReceiptSchema = z.object({
   warehouseCode: warehouseSchema.shape.warehouseCode,
 });
 
-export const purchaseReceiptRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.purchaseReceipt.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          warehouse: { select: { name: true } },
-          purchaseOrder: {
-            select: {
-              supplier: { select: { supplierCode: true, name: true } },
-              date: true,
-              docNo: true,
-              dueDate: true,
-            },
+export const purchaseReceiptRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.purchaseReceipt.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        warehouse: { select: { name: true } },
+        purchaseOrder: {
+          select: {
+            supplier: { select: { supplierCode: true, name: true } },
+            date: true,
+            docNo: true,
+            dueDate: true,
           },
         },
-        orderBy: {
-          createdAt: "desc",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return { data };
+  }),
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.purchaseReceipt.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
         },
+      },
+      include: {
+        warehouse: { select: { name: true } },
+        purchaseOrder: {
+          select: { docNo: true, supplier: true, orgCode: true },
+        },
+        purchaseReceiptItems: {
+          include: {
+            product: true,
+            packaging: true,
+          },
+        },
+      },
+    });
+
+    if (!data) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No data found",
       });
+    }
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.purchaseReceipt.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-        include: {
-          warehouse: { select: { name: true } },
-          purchaseOrder: {
-            select: { docNo: true, supplier: true, orgCode: true },
-          },
-          purchaseReceiptItems: {
-            include: {
-              product: true,
-              packaging: true,
-            },
-          },
-        },
-      });
+    return { data };
+  }),
 
-      if (!data) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "No data found",
-        });
-      }
-
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: purchaseReceiptSchema,
-    resolve: async ({ input, ctx }) => {
+  create: protectedProcedure
+    .input(purchaseReceiptSchema)
+    .mutation(async ({ input, ctx }) => {
       const { purchaseReceiptItems, ...purchaseReceipt } = input;
       const docNo = generateDocNo("PR-");
       const orgCode = ctx.user.orgCode;
@@ -155,14 +153,15 @@ export const purchaseReceiptRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: purchaseReceiptSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: purchaseReceiptSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { purchaseReceiptItems, ...updatedField } = fields;
 
@@ -208,8 +207,8 @@ export const purchaseReceiptRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});
 
 async function updatePurchaseOrderStatus(
   prisma: Prisma.TransactionClient,

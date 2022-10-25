@@ -1,6 +1,7 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const portSchema = z.object({
   portCode: z.string().max(20),
@@ -11,32 +12,29 @@ export const portSchema = z.object({
   lng: z.number().nullable().optional(),
 });
 
-export const portRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.port.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.port.findUnique({
-        where: {
-          portCode_orgCode: {
-            orgCode: ctx.user.orgCode,
-            portCode: input,
-          },
+export const portRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.port.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.port.findUnique({
+      where: {
+        portCode_orgCode: {
+          orgCode: ctx.user.orgCode,
+          portCode: input,
         },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: portSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(portSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.port.create({
         data: {
           ...input,
@@ -47,13 +45,15 @@ export const portRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: portSchema.omit({ portCode: true }).partial().extend({
-      portCode: portSchema.shape.portCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      portSchema.omit({ portCode: true }).partial().extend({
+        portCode: portSchema.shape.portCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { portCode, ...updatedFields } = input;
       const data = await prisma.port.update({
         data: {
@@ -69,11 +69,11 @@ export const portRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.port.delete({
         where: {
           portCode_orgCode: {
@@ -84,5 +84,5 @@ export const portRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

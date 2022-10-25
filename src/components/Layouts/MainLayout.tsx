@@ -65,7 +65,7 @@ export default function MainLayout(props: Props) {
     router.push("/profile");
   };
 
-  const { data: orgData, isLoading } = trpc.useQuery(["org.me"]);
+  const { data: orgData, isLoading } = trpc.org.me.useQuery();
 
   const handleChangeOrg = (e: SelectChangeEvent<string>) => {
     changeOrg(e.target.value);

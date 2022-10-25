@@ -41,13 +41,13 @@ export default function VesselDetail() {
   const { id } = router.query as QueryParams;
   const [tabIndex, setTabIndex] = useState("1");
 
-  const { data, refetch, isLoading } = trpc.useQuery(["vessel.find", id]);
-  const vesselProduct = trpc.useQuery(["vessel.getVesselProducts", id]);
-  const productList = trpc.useQuery(["product.findAll"]);
+  const { data, refetch, isLoading } = trpc.vessel.find.useQuery(id);
+  const vesselProduct = trpc.vessel.getVesselProducts.useQuery(id);
+  const productList = trpc.product.findAll.useQuery();
 
   const vesselProductForm = useForm();
 
-  const addVesselProduct = trpc.useMutation(["vessel.addProducts"], {
+  const addVesselProduct = trpc.vessel.addProducts.useMutation({
     onSuccess: () => {
       //   refetch();
       vesselProduct.refetch();

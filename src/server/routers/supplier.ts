@@ -1,6 +1,8 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
+import { router } from "../trpc";
 
 export const supplierSchema = z.object({
   supplierCode: z.string().max(20),
@@ -15,36 +17,33 @@ export const supplierSchema = z.object({
   supplierCategoryCode: z.string().max(20).optional().nullable(),
 });
 
-export const supplierRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.supplier.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          supplierCategory: true,
+export const supplierRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.supplier.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        supplierCategory: true,
+      },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.supplier.findUnique({
+      where: {
+        supplierCode_orgCode: {
+          supplierCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.supplier.findUnique({
-        where: {
-          supplierCode_orgCode: {
-            supplierCode: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-        include: { supplierCategory: true },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: supplierSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+      include: { supplierCategory: true },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(supplierSchema)
+    .mutation(async ({ input, ctx }) => {
       // console.log(input);
       const data = await prisma.supplier.create({
         data: {
@@ -56,13 +55,15 @@ export const supplierRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: supplierSchema.omit({ supplierCode: true }).partial().extend({
-      supplierCode: supplierSchema.shape.supplierCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      supplierSchema.omit({ supplierCode: true }).partial().extend({
+        supplierCode: supplierSchema.shape.supplierCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { supplierCode, ...updatedFields } = input;
       const data = await prisma.supplier.update({
         data: {
@@ -78,11 +79,11 @@ export const supplierRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.truck.delete({
         where: {
           truckCode_orgCode: {
@@ -93,5 +94,5 @@ export const supplierRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

@@ -11,13 +11,13 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function UserIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["user.findAll"]);
+  const { data, refetch, isLoading } = trpc.user.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
   const userRole = trpc.useQuery([]);
 
-  const { mutate: deleteData } = trpc.useMutation(["user.delete"]);
+  const { mutate: deleteData } = trpc.user.delete.useMutation();
 
   const handleDelete = (id: number) => () => {
     deleteData(id, {

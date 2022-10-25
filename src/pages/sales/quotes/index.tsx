@@ -24,11 +24,11 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function SalesQuoteIndex() {
-  const { data, isLoading, refetch } = trpc.useQuery(["salesQuote.findAll"]);
+  const { data, isLoading, refetch } = trpc.salesQuote.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const cancelQuotation = trpc.useMutation(["salesQuote.cancel"]);
+  const cancelQuotation = trpc.salesQuote.cancel.useMutation();
 
   const handleCancel = (docNo: string) => {
     if (window.confirm(`Are you sure you want to cancel quotation ${docNo}`)) {

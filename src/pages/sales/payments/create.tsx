@@ -50,29 +50,28 @@ export default function SalesPaymentCreate() {
   const { register, watch, setValue, handleSubmit, control, reset } =
     useForm<SalesPaymentFormValues>();
 
-  const salesInvoice = trpc.useQuery(["salesInvoice.find", salesInvoiceDocNo], {
-    onSuccess: (data) => {
-      setValue("currencyCode", data.data?.currencyCode!);
-    },
-  });
+    const salesInvoice = trpc.salesInvoice.find.useQuery(salesInvoiceDocNo, {
+        onSuccess: (data) => {
+            setValue("currencyCode", data.data?.currencyCode!);
+        },
+        trpc: {}
+    });
 
   const selectedCurrencyCode = watch("currencyCode");
   // const currencyList = trpc.useQuery(["currency.findAll"]);
-  const taxList = trpc.useQuery(["tax.findAll"]);
-  const salesInvoices = trpc.useQuery(
-    [
-      "salesInvoice.findAll",
-      {
-        filters: {
-          currencyCode: watch("currencyCode"),
-          customerCode: salesInvoice.data?.data?.customerCode,
-        },
-      },
-    ],
+  const taxList = trpc.tax.findAll.useQuery();
+  const salesInvoices = trpc.salesInvoice.findAll.useQuery(
     {
-      enabled:
-        !!salesInvoice.data?.data?.customerCode && !!selectedCurrencyCode,
-    }
+              filters: {
+                currencyCode: watch("currencyCode"),
+                customerCode: salesInvoice.data?.data?.customerCode,
+              },
+            },
+      {
+          enabled:
+              !!salesInvoice.data?.data?.customerCode && !!selectedCurrencyCode,
+          trpc: {}
+      }
   );
 
   const handleCancel = () => {
@@ -81,7 +80,7 @@ export default function SalesPaymentCreate() {
     }
   };
 
-  const createSalesPayment = trpc.useMutation(["salesPayment.create"]);
+  const createSalesPayment = trpc.salesPayment.create.useMutation();
 
   const onSubmit: SubmitHandler<SalesPaymentFormValues> = (data) => {
     createSalesPayment.mutate(data, {

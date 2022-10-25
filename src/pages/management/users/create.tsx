@@ -13,7 +13,7 @@ export default function UserCreate() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["user.create"], {
+  } = trpc.user.create.useMutation({
     onSuccess: () => {
       router.push("/management/users");
     },

@@ -49,33 +49,34 @@ export default function SalesQuotesDetail() {
   const router = useRouter();
   const { docNo } = router.query as QueryParam;
 
-  const { data: salesQuote } = trpc.useQuery(["salesQuote.find", docNo], {
-    enabled: !!docNo,
-  });
+    const { data: salesQuote } = trpc.salesQuote.find.useQuery(docNo, {
+        enabled: !!docNo,
+        trpc: {}
+    });
 
   const { register, watch, setValue, handleSubmit, control, reset } =
     useForm<SalesQuoteFormValues>();
 
-  const customerList = trpc.useQuery(["customer.findAll"]);
-  const currencyList = trpc.useQuery(["currency.findAll"]);
-  const portList = trpc.useQuery(["port.findAll"]);
-  const taxList = trpc.useQuery(["tax.findAll"]);
-  const serviceList = trpc.useQuery(["service.findAll"]);
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
+  const customerList = trpc.customer.findAll.useQuery();
+  const currencyList = trpc.currency.findAll.useQuery();
+  const portList = trpc.port.findAll.useQuery();
+  const taxList = trpc.tax.findAll.useQuery();
+  const serviceList = trpc.service.findAll.useQuery();
+  const warehouseList = trpc.warehouse.findAll.useQuery();
 
   const selectedCustomerCode = watch("customerCode");
   const selectedVesselCode = watch("vesselCode");
   const selectedPortCode = watch("portCode");
 
-  const productList = trpc.useQuery(
-    [
-      "product.findByVesselAndPort",
-      { vesselCode: selectedVesselCode, portCode: selectedPortCode },
-    ],
-    { enabled: !!selectedVesselCode }
+  const productList = trpc.product.findByVesselAndPort.useQuery(
+    { vesselCode: selectedVesselCode, portCode: selectedPortCode },
+      {
+          enabled: !!selectedVesselCode,
+          trpc: {}
+      }
   );
 
-  const createSalesQuote = trpc.useMutation(["salesQuote.update"], {
+  const createSalesQuote = trpc.salesQuote.update.useMutation({
     onError: (err) => {
       console.log(err);
     },
@@ -100,9 +101,12 @@ export default function SalesQuotesDetail() {
     control: control,
   });
 
-  const selectedCustomer = trpc.useQuery(
-    ["customer.find", selectedCustomerCode],
-    { enabled: !!selectedCustomerCode }
+  const selectedCustomer = trpc.customer.find.useQuery(
+    selectedCustomerCode,
+      {
+          enabled: !!selectedCustomerCode,
+          trpc: {}
+      }
   );
 
   const handleCancel = () => {

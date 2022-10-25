@@ -1,35 +1,36 @@
+import { protectedProcedure } from "./../trpc";
 import { TRPCError } from "@trpc/server";
-import { TRPCClientError } from "@trpc/client";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
 import * as bcrypt from "bcrypt";
+import { router } from "../trpc";
 
-export const profileRouter = createProtectedRouter()
-  .query("me", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.user.findFirst({
-        where: {
-          id: ctx.user.id,
-        },
-        select: {
-          name: true,
-          username: true,
-          email: true,
-          role: true,
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("changePassword", {
-    input: z.object({
-      oldPassword: z.string(),
-      newPassword: z.string().min(6, {
-        message: "Password harus minimal 6 karakter",
-      }),
-    }),
-    resolve: async ({ input, ctx }) => {
+export const profileRouter = router({
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.user.findFirst({
+      where: {
+        id: ctx.user.id,
+      },
+      select: {
+        name: true,
+        username: true,
+        email: true,
+        role: true,
+      },
+    });
+    return { data };
+  }),
+
+  changePassword: protectedProcedure
+    .input(
+      z.object({
+        oldPassword: z.string(),
+        newPassword: z.string().min(6, {
+          message: "Password harus minimal 6 karakter",
+        }),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const user = await prisma.user.findFirst({
         where: {
           id: ctx.user.id,
@@ -60,5 +61,5 @@ export const profileRouter = createProtectedRouter()
       });
 
       return { data: updatedData };
-    },
-  });
+    }),
+});

@@ -48,13 +48,16 @@ export default function SalesDeliveryCreate() {
     name: "salesDeliveryItems",
   });
 
-  const truckList = trpc.useQuery(["truck.findAll"]);
-  const salesDelivery = trpc.useQuery(["salesDelivery.find", docNo]);
+  const truckList = trpc.truck.findAll.useQuery();
+  const salesDelivery = trpc.salesDelivery.find.useQuery(docNo);
   const goodsReleaseOrderDocNo =
     salesDelivery.data?.data?.goodsReleaseOrderDocNo;
-  const goodsReleaseOrder = trpc.useQuery(
-    ["goodsReleaseOrder.find", goodsReleaseOrderDocNo!],
-    { enabled: !!goodsReleaseOrderDocNo }
+  const goodsReleaseOrder = trpc.goodsReleaseOrder.find.useQuery(
+    goodsReleaseOrderDocNo!,
+      {
+          enabled: !!goodsReleaseOrderDocNo,
+          trpc: {}
+      }
   );
 
   const [selectedWarehouse, setSelectedWarehouse] = useState<{
@@ -62,7 +65,7 @@ export default function SalesDeliveryCreate() {
     label: string;
   }>({ id: "", label: "" });
 
-  const updateSalesDelivery = trpc.useMutation(["salesDelivery.update"], {
+  const updateSalesDelivery = trpc.salesDelivery.update.useMutation({
     onError: (err) => {
       console.log(err);
     },

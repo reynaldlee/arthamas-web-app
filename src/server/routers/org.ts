@@ -1,6 +1,8 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 const orgSchema = z.object({
   orgCode: z.string().max(20),
@@ -9,44 +11,39 @@ const orgSchema = z.object({
   code: z.string().max(10),
 });
 
-export const orgRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async () => {
-      const data = await prisma.org.findMany();
-      return { data };
-    },
-  })
-  .query("me", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.userOrg.findMany({
-        where: {
-          user: { id: ctx.user?.id },
-        },
-        include: {
-          org: { select: { name: true } },
-        },
-      });
+export const orgRouter = router({
+  findAll: protectedProcedure.query(async () => {
+    const data = await prisma.org.findMany();
+    return { data };
+  }),
+  me: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.userOrg.findMany({
+      where: {
+        user: { id: ctx.user?.id },
+      },
+      include: {
+        org: { select: { name: true } },
+      },
+    });
 
-      return {
-        data: data,
-        selectedOrgCode: ctx.user?.orgCode,
-      };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ input }) => {
-      const data = await prisma.org.findUnique({
-        where: {
-          orgCode: input,
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: orgSchema,
-    resolve: async ({ input, ctx }) => {
+    return {
+      data: data,
+      selectedOrgCode: ctx.user?.orgCode,
+    };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ input }) => {
+    const data = await prisma.org.findUnique({
+      where: {
+        orgCode: input,
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(orgSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.org.create({
         data: {
           orgCode: input.orgCode,
@@ -59,13 +56,14 @@ export const orgRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: orgSchema.partial().omit({ orgCode: true }).extend({
-      orgCode: orgSchema.shape.orgCode,
     }),
-    resolve: async ({ input, ctx }) => {
+  update: protectedProcedure
+    .input(
+      orgSchema.partial().omit({ orgCode: true }).extend({
+        orgCode: orgSchema.shape.orgCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { orgCode, ...updatedFields } = input;
       const data = await prisma.org.update({
         data: {
@@ -77,11 +75,11 @@ export const orgRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.org.delete({
         where: {
           orgCode: input,
@@ -89,5 +87,5 @@ export const orgRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

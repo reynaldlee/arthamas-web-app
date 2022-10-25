@@ -1,6 +1,7 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const warehouseSchema = z.object({
   warehouseCode: z.string().max(20),
@@ -10,38 +11,35 @@ export const warehouseSchema = z.object({
   areaCode: z.string().max(20),
 });
 
-export const warehouseRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.warehouse.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          area: { select: { areaCode: true, areaName: true } },
+export const warehouseRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.warehouse.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        area: { select: { areaCode: true, areaName: true } },
+      },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.warehouse.findUnique({
+      include: {
+        area: { select: { areaCode: true, areaName: true } },
+      },
+      where: {
+        warehouseCode_orgCode: {
+          warehouseCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.warehouse.findUnique({
-        include: {
-          area: { select: { areaCode: true, areaName: true } },
-        },
-        where: {
-          warehouseCode_orgCode: {
-            warehouseCode: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: warehouseSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(warehouseSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.warehouse.create({
         data: {
           ...input,
@@ -52,13 +50,15 @@ export const warehouseRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: warehouseSchema.omit({ warehouseCode: true }).partial().extend({
-      warehouseCode: warehouseSchema.shape.warehouseCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      warehouseSchema.omit({ warehouseCode: true }).partial().extend({
+        warehouseCode: warehouseSchema.shape.warehouseCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { warehouseCode, ...updatedFields } = input;
 
       const data = await prisma.warehouse.update({
@@ -75,11 +75,11 @@ export const warehouseRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.warehouse.delete({
         where: {
           warehouseCode_orgCode: {
@@ -90,5 +90,5 @@ export const warehouseRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

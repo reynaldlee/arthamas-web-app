@@ -1,24 +1,25 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const unitSchema = z.object({
   unitCode: z.string().max(20),
   volumes: z.number(),
 });
 
-export const unitRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.unit.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
+export const unitRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.unit.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
       const data = await prisma.unit.findUnique({
         where: {
           unitCode_orgCode: {
@@ -28,11 +29,11 @@ export const unitRouter = createProtectedRouter()
         },
       });
       return { data };
-    },
-  })
-  .mutation("create", {
-    input: unitSchema,
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  create: protectedProcedure
+    .input(unitSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.unit.create({
         data: {
           ...input,
@@ -43,13 +44,15 @@ export const unitRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: unitSchema.omit({ unitCode: true }).partial().extend({
-      unitCode: unitSchema.shape.unitCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      unitSchema.omit({ unitCode: true }).partial().extend({
+        unitCode: unitSchema.shape.unitCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { unitCode, ...updatedFields } = input;
       const data = await prisma.unit.update({
         data: {
@@ -65,11 +68,11 @@ export const unitRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.unit.delete({
         where: {
           unitCode_orgCode: {
@@ -80,5 +83,5 @@ export const unitRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

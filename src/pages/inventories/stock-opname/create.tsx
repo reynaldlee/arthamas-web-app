@@ -51,11 +51,11 @@ export default function StockOpnameCreate() {
 
   const [data, setData] = useState<any>([]);
 
-  const createStockTransfer = trpc.useMutation(["stockTransfer.create"]);
+  const createStockTransfer = trpc.stockTransfer.create.useMutation();
 
-  const truckList = trpc.useQuery(["truck.findAll"]);
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
-  const productList = trpc.useQuery(["product.findAll"]);
+  const truckList = trpc.truck.findAll.useQuery();
+  const warehouseList = trpc.warehouse.findAll.useQuery();
+  const productList = trpc.product.findAll.useQuery();
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to exit?")) {

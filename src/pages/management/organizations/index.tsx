@@ -12,10 +12,10 @@ import MUIDataTable from "mui-datatables";
 import { LoaderModal } from "@/components/Loader";
 
 export default function OrganizationIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["org.findAll"]);
+  const { data, refetch, isLoading } = trpc.org.findAll.useQuery();
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["org.delete"]);
+  const { mutate: deleteData } = trpc.org.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {

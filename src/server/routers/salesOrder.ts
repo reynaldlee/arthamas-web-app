@@ -1,12 +1,12 @@
+import { protectedProcedure } from "./../trpc";
 import { Prisma } from "@prisma/client";
 import { generateDocNo } from "../../utils/docNo";
-import { format } from "date-fns";
 import { serviceSchema } from "./service";
 import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const salesOrderItemSchema = z.object({
   lineNo: z.number().min(1),
@@ -54,53 +54,50 @@ export const salesOrderSchema = z.object({
   salesOrderServices: z.array(salesOrderServiceSchema).optional().default([]),
 });
 
-export const salesOrderRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.salesOrder.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          customer: { select: { name: true } },
-          vessel: { select: { name: true } },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+export const salesOrderRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.salesOrder.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        customer: { select: { name: true } },
+        vessel: { select: { name: true } },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.salesOrder.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.salesOrder.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
+        },
+      },
+      include: {
+        warehouse: true,
+        customer: true,
+        port: true,
+        salesOrderItems: {
+          include: {
+            product: true,
+            packaging: true,
           },
         },
-        include: {
-          warehouse: true,
-          customer: true,
-          port: true,
-          salesOrderItems: {
-            include: {
-              product: true,
-              packaging: true,
-            },
-          },
-          salesOrderServices: true,
-        },
-      });
+        salesOrderServices: true,
+      },
+    });
 
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: salesOrderSchema,
-    resolve: async ({ input, ctx }) => {
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(salesOrderSchema)
+    .mutation(async ({ input, ctx }) => {
       const { salesOrderItems, salesOrderServices, ...salesOrder } = input;
       const docNo = generateDocNo("SO-");
 
@@ -146,14 +143,16 @@ export const salesOrderRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: salesOrderSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: salesOrderSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { salesOrderItems, salesOrderServices, ...updatedField } = fields;
 
@@ -200,11 +199,10 @@ export const salesOrderRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const result = await prisma.$transaction(async (prisma) => {
         const data = await prisma.salesOrder.update({
           where: {
@@ -231,8 +229,8 @@ export const salesOrderRouter = createProtectedRouter()
       });
 
       return { data: result };
-    },
-  });
+    }),
+});
 
 async function updateSalesQuoteStatus(
   prisma: Prisma.TransactionClient,

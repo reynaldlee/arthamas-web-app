@@ -46,7 +46,7 @@ type ProductPackagingFormValues = z.infer<typeof productPackagingSchema>;
 export default function StockTransferIndex() {
   const router = useRouter();
 
-  const { data, refetch, isLoading } = trpc.useQuery(["stockTransfer.findAll"]);
+  const { data, refetch, isLoading } = trpc.stockTransfer.findAll.useQuery();
 
   return (
     <MainLayout>

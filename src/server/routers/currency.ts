@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const currencySchema = z.object({
   currencyCode: z.string().max(3),
@@ -9,32 +9,29 @@ export const currencySchema = z.object({
   rateIdr: z.number(),
 });
 
-export const currencyRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.currency.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.currency.findUnique({
-        where: {
-          currencyCode_orgCode: {
-            currencyCode: input,
-            orgCode: ctx.user.orgCode,
-          },
+export const currencyRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.currency.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.currency.findUnique({
+      where: {
+        currencyCode_orgCode: {
+          currencyCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: currencySchema,
-    resolve: async ({ input, ctx }) => {
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(currencySchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.currency.create({
         data: {
           ...input,
@@ -45,13 +42,15 @@ export const currencyRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: currencySchema.omit({ currencyCode: true }).partial().extend({
-      currencyCode: currencySchema.shape.currencyCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      currencySchema.omit({ currencyCode: true }).partial().extend({
+        currencyCode: currencySchema.shape.currencyCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { currencyCode, ...updatedFields } = input;
       const data = await prisma.currency.update({
         data: {
@@ -67,11 +66,11 @@ export const currencyRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.currency.delete({
         where: {
           currencyCode_orgCode: {
@@ -82,5 +81,5 @@ export const currencyRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

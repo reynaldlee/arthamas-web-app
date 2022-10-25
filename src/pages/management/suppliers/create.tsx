@@ -15,7 +15,7 @@ export default function SupplierCreatePage() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["supplier.create"], {
+  } = trpc.supplier.create.useMutation({
     onSuccess: () => {
       router.push("/management/suppliers");
     },

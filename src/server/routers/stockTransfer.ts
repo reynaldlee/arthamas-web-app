@@ -1,14 +1,11 @@
-import { Prisma } from "@prisma/client";
+import { protectedProcedure } from "./../trpc";
 import { generateDocNo } from "../../utils/docNo";
-import { format } from "date-fns";
-import { serviceSchema } from "./service";
+
 import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
-
-// const a: Prisma.stockTransferServiceCreateManystockTransferInput;
+import { router } from "../trpc";
 
 export const stockTransferItemSchema = z.object({
   lineNo: z.number().min(1),
@@ -30,52 +27,49 @@ export const stockTransferSchema = z.object({
   stockTransferItems: z.array(stockTransferItemSchema).optional().default([]),
 });
 
-export const stockTransferRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.stockTransfer.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          warehouseFrom: true,
-          warehouseTo: true,
-          truck: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+export const stockTransferRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.stockTransfer.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        warehouseFrom: true,
+        warehouseTo: true,
+        truck: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.stockTransfer.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.stockTransfer.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
+        },
+      },
+      include: {
+        stockTransferItems: {
+          include: {
+            product: true,
+            productPackaging: true,
           },
         },
-        include: {
-          stockTransferItems: {
-            include: {
-              product: true,
-              productPackaging: true,
-            },
-          },
-          truck: true,
-          warehouseFrom: true,
-          warehouseTo: true,
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: stockTransferSchema,
-    resolve: async ({ input, ctx }) => {
+        truck: true,
+        warehouseFrom: true,
+        warehouseTo: true,
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(stockTransferSchema)
+    .mutation(async ({ input, ctx }) => {
       const { stockTransferItems, ...stockTransfer } = input;
       const docNo = generateDocNo("WH-");
 
@@ -97,14 +91,16 @@ export const stockTransferRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: stockTransferSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: stockTransferSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { stockTransferItems, ...updatedField } = fields;
 
@@ -136,11 +132,11 @@ export const stockTransferRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.stockTransfer.update({
         data: {
           status: "Cancelled",
@@ -156,5 +152,5 @@ export const stockTransferRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

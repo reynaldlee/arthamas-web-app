@@ -26,7 +26,7 @@ export default function SignInSide() {
     error,
     isError,
     isLoading,
-  } = trpc.useMutation(["auth.login"]);
+  } = trpc.auth.login.useMutation();
 
   const [fields, setFields] = React.useState({
     username: "",

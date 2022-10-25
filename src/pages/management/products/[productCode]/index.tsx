@@ -40,25 +40,26 @@ export default function ProductDetail() {
   const { productCode } = router.query as QueryParams;
   const [tabIndex, setTabIndex] = useState("1");
 
-  const { data, refetch, isLoading } = trpc.useQuery([
-    "product.find",
-    productCode,
-  ]);
+  const { data, refetch, isLoading } = trpc.product.find.useQuery(productCode);
 
-  const productPrices = trpc.useQuery(
-    ["product.findProductPrices", productCode],
-    { enabled: !!productCode }
+  const productPrices = trpc.product.findProductPrices.useQuery(
+    productCode,
+      {
+          enabled: !!productCode,
+          trpc: {}
+      }
   );
 
-  const inventory = trpc.useQuery(["inventory.findAllByProduct", productCode], {
-    enabled: !!productCode,
-  });
+    const inventory = trpc.inventory.findAllByProduct.useQuery(productCode, {
+        enabled: !!productCode,
+        trpc: {}
+    });
 
   const productPackagingForm = useForm<ProductPackagingFormValues>({
     defaultValues: { productCode },
   });
 
-  const addProductPackaging = trpc.useMutation(["product.addPackaging"], {
+  const addProductPackaging = trpc.product.addPackaging.useMutation({
     onSuccess: () => {
       refetch();
       productPackagingForm.reset();

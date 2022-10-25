@@ -11,10 +11,10 @@ import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 
 export default function TruckIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["truck.findAll"]);
+  const { data, refetch, isLoading } = trpc.truck.findAll.useQuery();
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["truck.delete"]);
+  const { mutate: deleteData } = trpc.truck.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {

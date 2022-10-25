@@ -50,24 +50,25 @@ export default function PurchaseOrderCreate() {
       },
     });
 
-  const supplierList = trpc.useQuery(["supplier.findAll"]);
-  const currencyList = trpc.useQuery(["currency.findAll"]);
+  const supplierList = trpc.supplier.findAll.useQuery();
+  const currencyList = trpc.currency.findAll.useQuery();
   // const serviceList = trpc.useQuery(["service.findAll"]);
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
+  const warehouseList = trpc.warehouse.findAll.useQuery();
 
   const selectedWarehouseCode = watch("warehouseCode");
   const selectedSupplierCode = watch("supplierCode");
 
-  trpc.useQuery(["warehouse.find", selectedWarehouseCode], {
-    enabled: !!selectedWarehouseCode,
-    onSuccess: (data) => {
-      setValue("shipTo", data.data?.address);
-    },
-  });
+    trpc.warehouse.find.useQuery(selectedWarehouseCode, {
+        enabled: !!selectedWarehouseCode,
+        onSuccess: (data) => {
+            setValue("shipTo", data.data?.address);
+        },
+        trpc: {}
+    });
 
-  const productList = trpc.useQuery(["product.findAll"]);
+  const productList = trpc.product.findAll.useQuery();
 
-  const createPurchaseOrder = trpc.useMutation(["purchaseOrder.create"], {
+  const createPurchaseOrder = trpc.purchaseOrder.create.useMutation({
     onError: (err) => {
       console.log(err);
     },

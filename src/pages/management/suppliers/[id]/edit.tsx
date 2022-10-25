@@ -17,9 +17,9 @@ export default function PortEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["supplier.find", id]);
+  const { data } = trpc.supplier.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["supplier.update"], {
+  const updateMutatation = trpc.supplier.update.useMutation({
     onSuccess: () => {
       router.push("/management/suppliers");
     },

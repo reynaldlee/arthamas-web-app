@@ -34,7 +34,7 @@ export default function WarehouseForm({
   isEdit,
   defaultValues,
 }: WarehouseFormProps) {
-  const areaData = trpc.useQuery(["area.findAll"]);
+  const areaData = trpc.area.findAll.useQuery();
 
   const {
     register,

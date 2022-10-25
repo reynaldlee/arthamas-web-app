@@ -1,6 +1,7 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 import { productSchema } from "./product";
 
 export const vesselProductSchema = z.object({
@@ -18,39 +19,35 @@ export const vesselSchema = z.object({
   isAllProduct: z.boolean().optional().nullable(),
 });
 
-export const vesselRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.vessel.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          customer: {
-            select: {
-              name: true,
-            },
+export const vesselRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.vessel.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        customer: {
+          select: {
+            name: true,
           },
         },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.vessel.findUnique({
-        where: {
-          vesselCode_orgCode: {
-            vesselCode: input,
-            orgCode: ctx.user.orgCode,
-          },
+      },
+    });
+    return { data };
+  }),
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.vessel.findUnique({
+      where: {
+        vesselCode_orgCode: {
+          vesselCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .query("getVesselProducts", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
+      },
+    });
+    return { data };
+  }),
+
+  getVesselProducts: protectedProcedure
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
       const data = await prisma.vesselProduct.findMany({
         where: {
           vesselCode: input,
@@ -61,11 +58,11 @@ export const vesselRouter = createProtectedRouter()
         },
       });
       return { data };
-    },
-  })
-  .query("findByCustomerCode", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
+    }),
+
+  findByCustomerCode: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
       const data = await prisma.vessel.findMany({
         where: {
           customerCode: input,
@@ -73,13 +70,15 @@ export const vesselRouter = createProtectedRouter()
         },
       });
       return { data };
-    },
-  })
-  .mutation("create", {
-    input: vesselSchema.extend({
-      products: z.array(vesselProductSchema).optional(),
     }),
-    resolve: async ({ input, ctx }) => {
+
+  create: protectedProcedure
+    .input(
+      vesselSchema.extend({
+        products: z.array(vesselProductSchema).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.vessel.create({
         data: {
           ...input,
@@ -90,13 +89,15 @@ export const vesselRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: vesselSchema.omit({ vesselCode: true }).partial().extend({
-      vesselCode: vesselSchema.shape.vesselCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      vesselSchema.omit({ vesselCode: true }).partial().extend({
+        vesselCode: vesselSchema.shape.vesselCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { vesselCode, ...updatedFields } = input;
       const data = await prisma.vessel.update({
         data: {
@@ -112,14 +113,16 @@ export const vesselRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("addProducts", {
-    input: z.object({
-      productCode: productSchema.shape.productCode,
-      vesselCode: vesselSchema.shape.vesselCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  addProduct: protectedProcedure
+    .input(
+      z.object({
+        productCode: productSchema.shape.productCode,
+        vesselCode: vesselSchema.shape.vesselCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const result = await prisma.vesselProduct.create({
         data: {
           vesselCode: input.vesselCode,
@@ -129,15 +132,16 @@ export const vesselRouter = createProtectedRouter()
       });
 
       return { data: result };
-    },
-  })
-
-  .mutation("updateProducts", {
-    input: z.object({
-      vesselCode: vesselSchema.shape.vesselCode,
-      products: z.array(vesselProductSchema).nonempty(),
     }),
-    resolve: async ({ input, ctx }) => {
+
+  updateProducts: protectedProcedure
+    .input(
+      z.object({
+        vesselCode: vesselSchema.shape.vesselCode,
+        products: z.array(vesselProductSchema).nonempty(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       //remove previous vesselProduct
       const result = await prisma.$transaction(async (prisma) => {
         await prisma.vesselProduct.deleteMany({
@@ -160,11 +164,11 @@ export const vesselRouter = createProtectedRouter()
       });
 
       return result;
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.vessel.delete({
         where: {
           vesselCode_orgCode: {
@@ -175,5 +179,5 @@ export const vesselRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

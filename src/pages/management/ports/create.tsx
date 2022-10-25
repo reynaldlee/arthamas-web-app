@@ -13,7 +13,7 @@ export default function PortCreatePage() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["port.create"], {
+  } = trpc.port.create.useMutation({
     onSuccess: () => {
       router.push("/management/ports");
     },

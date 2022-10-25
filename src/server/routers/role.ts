@@ -1,33 +1,32 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
+import { router } from "../trpc";
 
 const roleSchema = z.object({
   roleId: z.string(),
   name: z.string().max(40),
 });
 
-export const roleRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.role.findMany();
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.role.findUnique({
-        where: {
-          roleId: input,
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: roleSchema,
-    resolve: async ({ input, ctx }) => {
+export const roleRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.role.findMany();
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.role.findUnique({
+      where: {
+        roleId: input,
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(roleSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.role.create({
         data: {
           ...input,
@@ -37,11 +36,11 @@ export const roleRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: roleSchema.partial(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  update: protectedProcedure
+    .input(roleSchema.partial())
+    .mutation(async ({ input, ctx }) => {
       const { roleId, ...updatedFields } = input;
       const data = await prisma.role.update({
         data: {
@@ -52,15 +51,13 @@ export const roleRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
-// .mutation("delete", {
-//   input: z.string(),
-//   resolve: async ({ input }) => {
-//     const data = await prisma.role.delete({
-//       where: { id: roleId },
-//     });
+    }),
 
-//     return { data };
-//   },
-// });
+  delete: protectedProcedure.input(z.string()).mutation(async ({ input }) => {
+    const data = await prisma.role.delete({
+      where: { roleId: input },
+    });
+
+    return { data };
+  }),
+});

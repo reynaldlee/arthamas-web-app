@@ -1,6 +1,8 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 const userOrgSchema = z.object({
   orgCode: z.string(),
@@ -16,35 +18,34 @@ const userSchema = z.object({
   roleId: z.string().max(10),
 });
 
-export const userRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.user.findMany({
-        where: {
-          orgs: { some: { orgCode: ctx.user.orgCode } },
-        },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.number(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.user.findUnique({
-        where: {
-          id: input,
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: userSchema.and(
-      z.object({
-        orgs: z.array(userOrgSchema),
-      })
-    ),
-    resolve: async ({ input, ctx }) => {
+export const userRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.user.findMany({
+      where: {
+        orgs: { some: { orgCode: ctx.user.orgCode } },
+      },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.number()).query(async ({ ctx, input }) => {
+    const data = await prisma.user.findUnique({
+      where: {
+        id: input,
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(
+      userSchema.and(
+        z.object({
+          orgs: z.array(userOrgSchema),
+        })
+      )
+    )
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.user.create({
         data: {
           ...input,
@@ -62,11 +63,11 @@ export const userRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: userSchema.partial(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  update: protectedProcedure
+    .input(userSchema.partial())
+    .mutation(async ({ input, ctx }) => {
       const { id, ...updatedFields } = input;
       const data = await prisma.user.update({
         data: {
@@ -77,14 +78,16 @@ export const userRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("updateOrgs", {
-    input: z.object({
-      id: z.number(),
-      orgs: z.array(userOrgSchema),
     }),
-    resolve: async ({ input }) => {
+
+  updateOrgs: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        orgs: z.array(userOrgSchema),
+      })
+    )
+    .mutation(async ({ input }) => {
       const result = await prisma.$transaction(async (prisma) => {
         await prisma.userOrg.deleteMany({
           where: {
@@ -102,15 +105,13 @@ export const userRouter = createProtectedRouter()
       });
 
       return { data: result };
-    },
-  })
-  .mutation("delete", {
-    input: z.number(),
-    resolve: async ({ input }) => {
-      const data = await prisma.user.delete({
-        where: { id: input },
-      });
+    }),
 
-      return { data };
-    },
-  });
+  delete: protectedProcedure.input(z.number()).mutation(async ({ input }) => {
+    const data = await prisma.user.delete({
+      where: { id: input },
+    });
+
+    return { data };
+  }),
+});

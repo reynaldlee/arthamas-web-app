@@ -1,13 +1,15 @@
+import { protectedProcedure } from "./../trpc";
 import { TRPCError } from "@trpc/server";
-import { Prisma } from "@prisma/client";
+
 import { generateDocNo } from "./../../utils/docNo";
-import { format } from "date-fns";
+
 import { serviceSchema } from "./service";
 import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
+import { router } from "../trpc";
 
 // const a: Prisma.SalesQuoteServiceCreateManySalesQuoteInput;
 
@@ -53,44 +55,41 @@ export const salesQuoteSchema = z.object({
   salesQuoteServices: z.array(salesQuoteServiceSchema).optional().default([]),
 });
 
-export const salesQuoteRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.salesQuote.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          customer: { select: { name: true } },
-          vessel: { select: { name: true } },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+export const salesQuoteRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.salesQuote.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        customer: { select: { name: true } },
+        vessel: { select: { name: true } },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.salesQuote.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
-          },
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.salesQuote.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
         },
-        include: {
-          salesQuoteItems: true,
-          salesQuoteServices: true,
-        },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: salesQuoteSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+      include: {
+        salesQuoteItems: true,
+        salesQuoteServices: true,
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(salesQuoteSchema)
+    .mutation(async ({ input, ctx }) => {
       const { salesQuoteItems, salesQuoteServices, ...salesQuote } = input;
       const docNo = generateDocNo("SQ-");
 
@@ -119,14 +118,16 @@ export const salesQuoteRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: salesQuoteSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: salesQuoteSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { salesQuoteItems, salesQuoteServices, ...updatedField } = fields;
 
@@ -197,11 +198,11 @@ export const salesQuoteRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("cancel", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  cancel: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.salesQuote.update({
         data: {
           status: "Cancelled",
@@ -217,5 +218,5 @@ export const salesQuoteRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

@@ -24,11 +24,11 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function SalesInvoiceIndex() {
-  const { data, isLoading, refetch } = trpc.useQuery(["salesInvoice.findAll"]);
+  const { data, isLoading, refetch } = trpc.salesInvoice.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const { mutate: cancelInvoice } = trpc.useMutation(["salesInvoice.cancel"]);
+  const { mutate: cancelInvoice } = trpc.salesInvoice.cancel.useMutation();
 
   return (
     <MainLayout>

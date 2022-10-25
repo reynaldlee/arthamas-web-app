@@ -7,7 +7,7 @@ import { setCookie } from "nookies";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { mutate: login, error, isError } = trpc.useMutation(["auth.login"]);
+  const { mutate: login, error, isError } = trpc.auth.login.useMutation();
 
   const [fields, setFields] = useState({
     username: "",

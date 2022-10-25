@@ -17,9 +17,9 @@ export default function WarehouseEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["warehouse.find", id]);
+  const { data } = trpc.warehouse.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["warehouse.update"], {
+  const updateMutatation = trpc.warehouse.update.useMutation({
     onSuccess: () => {
       router.push("/management/warehouses");
     },

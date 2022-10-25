@@ -17,9 +17,9 @@ export default function CustomerGroupEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["customerGroup.find", id]);
+  const { data } = trpc.customerGroup.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["customerGroup.update"], {
+  const updateMutatation = trpc.customerGroup.update.useMutation({
     onSuccess: () => {
       router.push("/management/customer-groups");
     },

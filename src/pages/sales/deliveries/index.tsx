@@ -15,11 +15,11 @@ import DeliveryToday from "@mui/icons-material/Today";
 import DeliveryIn7Days from "@mui/icons-material/LocalShipping";
 
 export default function SalesDeliveryIndex() {
-  const { data, isLoading, refetch } = trpc.useQuery(["salesDelivery.findAll"]);
+  const { data, isLoading, refetch } = trpc.salesDelivery.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const cancelSalesDelivery = trpc.useMutation(["salesDelivery.cancel"]);
+  const cancelSalesDelivery = trpc.salesDelivery.cancel.useMutation();
 
   const handleCancel = (docNo: string) => {
     if (window.confirm(`Are you sure you want to cancel delivery ${docNo}`)) {

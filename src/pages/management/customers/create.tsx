@@ -15,7 +15,7 @@ export default function CustomerCreatePage() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["customer.create"], {
+  } = trpc.customer.create.useMutation({
     onSuccess: () => {
       router.push("/management/customers");
     },

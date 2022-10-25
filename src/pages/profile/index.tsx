@@ -18,9 +18,9 @@ type ChangePasswordFormValues = {
 type ChangePasswordSubmitHandler = SubmitHandler<ChangePasswordFormValues>;
 
 export default function ProfilePage() {
-  const { data } = trpc.useQuery(["profile.me"]);
+  const { data } = trpc.profile.me.useQuery();
 
-  const changePassword = trpc.useMutation(["profile.changePassword"]);
+  const changePassword = trpc.profile.changePassword.useMutation();
 
   const { handleSubmit, register, reset } = useForm<ChangePasswordFormValues>({
     defaultValues: {

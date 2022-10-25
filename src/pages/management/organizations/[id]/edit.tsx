@@ -17,9 +17,9 @@ export default function OrganizationEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["org.find", id]);
+  const { data } = trpc.org.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["org.update"], {
+  const updateMutatation = trpc.org.update.useMutation({
     onSuccess: () => {
       router.push("/management/organizations");
     },

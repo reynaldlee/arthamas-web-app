@@ -11,10 +11,10 @@ import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 
 export default function PortIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["port.findAll"]);
+  const { data, refetch, isLoading } = trpc.port.findAll.useQuery();
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["port.delete"]);
+  const { mutate: deleteData } = trpc.port.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {

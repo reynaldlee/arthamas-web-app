@@ -1,38 +1,36 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const productTypeSchema = z.object({
   productTypeCode: z.string().max(10),
   name: z.string().max(40),
 });
 
-export const productTypeRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.productType.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.productType.findUnique({
-        where: {
-          productTypeCode_orgCode: {
-            productTypeCode: input,
-            orgCode: ctx.user.orgCode,
-          },
+export const productTypeRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.productType.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.productType.findUnique({
+      where: {
+        productTypeCode_orgCode: {
+          productTypeCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: productTypeSchema,
-    resolve: async ({ input, ctx }) => {
+      },
+    });
+    return { data };
+  }),
+
+  create: protectedProcedure
+    .input(productTypeSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.productType.create({
         data: {
           ...input,
@@ -43,13 +41,15 @@ export const productTypeRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: productTypeSchema.omit({ productTypeCode: true }).partial().extend({
-      productTypeCode: productTypeSchema.shape.productTypeCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      productTypeSchema.omit({ productTypeCode: true }).partial().extend({
+        productTypeCode: productTypeSchema.shape.productTypeCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { productTypeCode, ...updatedFields } = input;
       const data = await prisma.productType.update({
         data: {
@@ -65,11 +65,11 @@ export const productTypeRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.productType.delete({
         where: {
           productTypeCode_orgCode: {
@@ -80,5 +80,5 @@ export const productTypeRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

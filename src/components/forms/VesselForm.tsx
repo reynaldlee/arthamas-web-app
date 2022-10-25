@@ -29,7 +29,7 @@ export default function VesselForm({
   isEdit,
   defaultValues,
 }: VesselFormProps) {
-  const customerData = trpc.useQuery(["customer.findAll"]);
+  const customerData = trpc.customer.findAll.useQuery();
 
   const {
     register,
@@ -41,9 +41,12 @@ export default function VesselForm({
     defaultValues: defaultValues,
   });
 
-  const selectedCustomer = trpc.useQuery(
-    ["customer.find", watch("customerCode")],
-    { enabled: !!watch("customerCode") }
+  const selectedCustomer = trpc.customer.find.useQuery(
+    watch("customerCode"),
+      {
+          enabled: !!watch("customerCode"),
+          trpc: {}
+      }
   );
 
   const submit: VesselFormSubmitHandler<VesselFormValues> = (data) => {

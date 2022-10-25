@@ -17,7 +17,7 @@ export default function VesselCreate() {
     mutate: submit,
     error,
     isError,
-  } = trpc.useMutation(["vessel.create"], {
+  } = trpc.vessel.create.useMutation({
     onSuccess: () => {
       router.push("/management/vessels");
     },

@@ -17,9 +17,9 @@ export default function VesselEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-  const { data } = trpc.useQuery(["vessel.find", id]);
+  const { data } = trpc.vessel.find.useQuery(id);
 
-  const updateMutatation = trpc.useMutation(["vessel.update"], {
+  const updateMutatation = trpc.vessel.update.useMutation({
     onSuccess: () => {
       router.push("/management/vessels");
     },

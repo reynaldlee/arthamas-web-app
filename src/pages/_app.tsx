@@ -1,13 +1,15 @@
 import type { AppType } from "next/dist/shared/lib/utils";
 
 import { withTRPC } from "@trpc/next";
-import { AppRouter } from "./api/trpc/[trpc]";
+
 import superjson from "superjson";
 import ThemeProviderWrapper from "src/theme/ThemeProvider";
 import { AuthProvider } from "src/context/AuthContext";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { id } from "date-fns/locale";
+import { AppRouter } from "src/server/routers/app";
+import { trpc } from "@/utils/trpc";
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
@@ -21,27 +23,4 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   );
 };
 
-export default withTRPC<AppRouter>({
-  config({ ctx }) {
-    return {
-      url: `${process.env.NEXT_PUBLIC_HOST}/api/trpc`,
-      transformer: superjson,
-      queryClientConfig: {
-        defaultOptions: {
-          queries: {
-            refetchOnWindowFocus: false,
-            retry: 2,
-            staleTime: 0,
-            cacheTime: 0,
-            onError: (err: any) => {
-              if (err.data.httpStatus === 401) {
-                window.document.location = "/login";
-              }
-            },
-          },
-        },
-      },
-    };
-  },
-  // ssr: true,
-})(MyApp);
+export default trpc.withTRPC(MyApp);

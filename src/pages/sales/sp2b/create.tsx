@@ -52,19 +52,19 @@ export default function Sp2bCreate() {
     name: "goodsReleaseOrderItems",
   });
 
-  const salesOrder = trpc.useQuery(["salesOrder.find", salesOrderDocNo!], {
-    enabled: !!salesOrderDocNo,
-  });
+    const salesOrder = trpc.salesOrder.find.useQuery(salesOrderDocNo!, {
+        enabled: !!salesOrderDocNo,
+        trpc: {}
+    });
 
-  const warehouseList = trpc.useQuery(["warehouse.findAll"]);
+  const warehouseList = trpc.warehouse.findAll.useQuery();
 
   const [selectedWarehouse, setSelectedWarehouse] = useState<{
     id: string;
     label: string;
   }>({ id: "", label: "" });
 
-  const createGoodsReleaseOrder = trpc.useMutation(
-    ["goodsReleaseOrder.create"],
+  const createGoodsReleaseOrder = trpc.goodsReleaseOrder.create.useMutation(
     {
       onError: (err) => {
         console.log(err);

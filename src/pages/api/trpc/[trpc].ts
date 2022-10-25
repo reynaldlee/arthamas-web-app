@@ -9,8 +9,12 @@ export type AppRouter = typeof appRouter;
 export default trpcNext.createNextApiHandler<AppRouter>({
   router: appRouter,
   onError: ({ error, ctx }) => {
-    if (error.code === "UNAUTHORIZED") {
+    if (error.code === "INTERNAL_SERVER_ERROR") {
+      // send to bug reporting
     }
   },
   createContext: createContext,
+  batching: {
+    enabled: true,
+  },
 });

@@ -33,11 +33,12 @@ export default function UserForm({
     defaultValues: defaultValues,
   });
 
-  const roles = trpc.useQuery(["role.findAll"]);
+  const roles = trpc.role.findAll.useQuery();
 
-  const selectedRole = trpc.useQuery(["role.find", defaultValues?.roleId!], {
-    enabled: !!roles?.data?.data,
-  });
+    const selectedRole = trpc.role.find.useQuery(defaultValues?.roleId!, {
+        enabled: !!roles?.data?.data,
+        trpc: {}
+    });
 
   const submit: UserFormSubmitHandler<UserFormValues> = (data) => {
     if (isEdit) {

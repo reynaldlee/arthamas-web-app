@@ -35,7 +35,7 @@ export default function PurchaseReceiptDetail() {
   const router = useRouter();
   const docNo = router.query.docNo as string;
 
-  const { data } = trpc.useQuery(["purchaseReceipt.find", docNo]);
+  const { data } = trpc.purchaseReceipt.find.useQuery(docNo);
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to exit?")) {
@@ -75,6 +75,7 @@ export default function PurchaseReceiptDetail() {
             renderInput={(params) => (
               <TextField fullWidth {...params} required />
             )}
+            onChange={() => {}}
           />
         </Grid>
 

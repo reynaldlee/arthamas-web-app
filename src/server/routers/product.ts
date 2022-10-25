@@ -1,3 +1,4 @@
+import { protectedProcedure } from "./../trpc";
 import { Prisma } from "@prisma/client";
 import { productTypeSchema } from "./productType";
 import { unitSchema } from "./unit";
@@ -6,6 +7,7 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 import { createProtectedRouter } from "../createRouter";
 import { productCategorySchema } from "./productCategory";
+import { router } from "../trpc";
 
 export const productPackagingSchema = z.object({
   productCode: z.string(),
@@ -31,44 +33,41 @@ export const productSchema = z.object({
     .nullable(),
 });
 
-export const productRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.product.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          productCategory: true,
-          productType: true,
-          productGrade: true,
-          packagings: true,
+export const productRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.product.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        productCategory: true,
+        productType: true,
+        productGrade: true,
+        packagings: true,
+      },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.product.findUnique({
+      where: {
+        productCode_orgCode: {
+          productCode: input,
+          orgCode: ctx.user.orgCode,
         },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.product.findUnique({
-        where: {
-          productCode_orgCode: {
-            productCode: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-        include: {
-          productCategory: true,
-          productType: true,
-          productGrade: true,
-          packagings: true,
-        },
-      });
-      return { data };
-    },
-  })
-  .query("findProductPrices", {
-    input: productSchema.shape.productCode,
-    resolve: async ({ ctx, input }) => {
+      },
+      include: {
+        productCategory: true,
+        productType: true,
+        productGrade: true,
+        packagings: true,
+      },
+    });
+    return { data };
+  }),
+
+  findProductPrices: protectedProcedure
+    .input(productSchema.shape.productCode)
+    .query(async ({ ctx, input }) => {
       const data = await prisma.productPrices.findMany({
         where: {
           productCode: input,
@@ -82,14 +81,16 @@ export const productRouter = createProtectedRouter()
         },
       });
       return { data };
-    },
-  })
-  .query("findByVesselAndPort", {
-    input: z.object({
-      vesselCode: z.string(),
-      portCode: z.string(),
     }),
-    resolve: async ({ ctx, input }) => {
+
+  findByVesselAndPort: protectedProcedure
+    .input(
+      z.object({
+        vesselCode: z.string(),
+        portCode: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
       const vessel = await prisma.vessel.findUnique({
         where: {
           vesselCode_orgCode: {
@@ -136,11 +137,11 @@ export const productRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("create", {
-    input: productSchema,
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  create: protectedProcedure
+    .input(productSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.product.create({
         data: {
           ...input,
@@ -152,13 +153,15 @@ export const productRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: productSchema.partial().omit({ productCode: true }).extend({
-      productCode: productSchema.shape.productCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      productSchema.partial().omit({ productCode: true }).extend({
+        productCode: productSchema.shape.productCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { productCode, ...updatedFields } = input;
       const data = await prisma.product.update({
         data: {
@@ -174,11 +177,11 @@ export const productRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.product.delete({
         where: {
           productCode_orgCode: {
@@ -189,11 +192,11 @@ export const productRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("addPackaging", {
-    input: productPackagingSchema,
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  addPackaging: protectedProcedure
+    .input(productPackagingSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.productPackaging.create({
         data: {
           ...input,
@@ -204,5 +207,5 @@ export const productRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

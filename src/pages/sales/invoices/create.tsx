@@ -53,69 +53,70 @@ export default function SalesInvoiceCreate() {
   const { register, watch, setValue, handleSubmit, control, reset } =
     useForm<SalesInvoiceFormValues>();
 
-  const salesDeliveryList = trpc.useQuery(["salesDelivery.findOpenStatus"]);
-  const bankAccountList = trpc.useQuery(["bankAccount.findAll"]);
+  const salesDeliveryList = trpc.salesDelivery.findOpenStatus.useQuery();
+  const bankAccountList = trpc.bankAccount.findAll.useQuery();
   const salesDeliveryDocNo = watch("salesDeliveryDocNo");
 
-  const salesDelivery = trpc.useQuery(
-    ["salesDelivery.find", salesDeliveryDocNo],
-    {
-      enabled: !!salesDeliveryDocNo,
-      onSuccess(data) {
-        const delivery = data.data;
-        const { salesOrder } = delivery;
-        const exchangeRate = delivery?.salesOrder.exchangeRate;
+  const salesDelivery = trpc.salesDelivery.find.useQuery(
+    salesDeliveryDocNo,
+      {
+          enabled: !!salesDeliveryDocNo,
+          onSuccess(data) {
+              const delivery = data.data;
+              const { salesOrder } = delivery;
+              const exchangeRate = delivery?.salesOrder.exchangeRate;
 
-        const salesInvoiceItems = delivery.salesDeliveryItems.map(
-          (item, index) => ({
-            lineNo: index + 1,
-            qty: item.qty,
-            unitQty: item.salesOrderItem.unitQty,
-            totalUnitQty: item.qty * item.salesOrderItem.unitQty,
-            unitCode: item.salesOrderItem.unitCode,
-            packagingCode: item.salesOrderItem.packagingCode,
-            unitPrice: item.salesOrderItem.unitPrice,
-            desc: item.salesOrderItem.desc,
-            productCode: item.salesOrderItem.productCode,
-            amount:
-              item.qty *
-              item.salesOrderItem.unitQty *
-              item.salesOrderItem.unitPrice *
-              exchangeRate,
-          })
-        );
+              const salesInvoiceItems = delivery.salesDeliveryItems.map(
+                  (item, index) => ({
+                      lineNo: index + 1,
+                      qty: item.qty,
+                      unitQty: item.salesOrderItem.unitQty,
+                      totalUnitQty: item.qty * item.salesOrderItem.unitQty,
+                      unitCode: item.salesOrderItem.unitCode,
+                      packagingCode: item.salesOrderItem.packagingCode,
+                      unitPrice: item.salesOrderItem.unitPrice,
+                      desc: item.salesOrderItem.desc,
+                      productCode: item.salesOrderItem.productCode,
+                      amount:
+                          item.qty *
+                          item.salesOrderItem.unitQty *
+                          item.salesOrderItem.unitPrice *
+                          exchangeRate,
+                  })
+              );
 
-        const totalProduct = _.sumBy(salesInvoiceItems, (o) => o.amount);
-        const taxRate = salesOrder.taxRate;
-        const taxAmount = totalProduct * taxRate;
-        const totalBeforeTax = totalProduct;
-        const totalAmount = taxAmount + totalBeforeTax;
+              const totalProduct = _.sumBy(salesInvoiceItems, (o) => o.amount);
+              const taxRate = salesOrder.taxRate;
+              const taxAmount = totalProduct * taxRate;
+              const totalBeforeTax = totalProduct;
+              const totalAmount = taxAmount + totalBeforeTax;
 
-        reset({
-          currencyCode: salesOrder.currencyCode,
-          customerCode: salesOrder.customerCode,
-          date: new Date(),
-          taxCode: salesOrder.taxCode,
-          totalProduct: totalProduct,
-          totalService: 0,
-          totalBeforeTax: totalBeforeTax,
-          taxAmount: taxAmount,
-          taxRate: salesOrder.taxRate,
-          totalAmount: totalAmount,
-          dueDate: addDays(new Date(), salesOrder.customer.top),
-          exchangeRate: exchangeRate,
-          salesDeliveryDocNo: delivery.docNo,
-          poNumber: salesOrder.poNumber,
-          salesInvoiceItems: salesInvoiceItems,
-        });
-      },
-    }
+              reset({
+                  currencyCode: salesOrder.currencyCode,
+                  customerCode: salesOrder.customerCode,
+                  date: new Date(),
+                  taxCode: salesOrder.taxCode,
+                  totalProduct: totalProduct,
+                  totalService: 0,
+                  totalBeforeTax: totalBeforeTax,
+                  taxAmount: taxAmount,
+                  taxRate: salesOrder.taxRate,
+                  totalAmount: totalAmount,
+                  dueDate: addDays(new Date(), salesOrder.customer.top),
+                  exchangeRate: exchangeRate,
+                  salesDeliveryDocNo: delivery.docNo,
+                  poNumber: salesOrder.poNumber,
+                  salesInvoiceItems: salesInvoiceItems,
+              });
+          },
+          trpc: {}
+      }
   );
 
   // console.log(watch());
 
   // const currencyList = trpc.useQuery(["currency.findAll"]);
-  const taxList = trpc.useQuery(["tax.findAll"]);
+  const taxList = trpc.tax.findAll.useQuery();
   // const serviceList = trpc.useQuery(["service.findAll"]);
   // const warehouseList = trpc.useQuery(["warehouse.findAll"]);
 
@@ -127,7 +128,7 @@ export default function SalesInvoiceCreate() {
     }
   };
 
-  const createSalesInvoice = trpc.useMutation(["salesInvoice.create"]);
+  const createSalesInvoice = trpc.salesInvoice.create.useMutation();
 
   const onSubmit: SubmitHandler<SalesInvoiceFormValues> = (data) => {
     createSalesInvoice.mutate(data, {

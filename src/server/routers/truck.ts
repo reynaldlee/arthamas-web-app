@@ -1,6 +1,7 @@
+import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+import { router } from "../trpc";
 
 export const truckSchema = z.object({
   truckCode: z.string().max(20),
@@ -9,18 +10,17 @@ export const truckSchema = z.object({
   type: z.string().max(40).optional().nullable(),
 });
 
-export const truckRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.truck.findMany({
-        where: { orgCode: ctx.user.orgCode },
-      });
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
+export const truckRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.truck.findMany({
+      where: { orgCode: ctx.user.orgCode },
+    });
+    return { data };
+  }),
+
+  find: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
       const data = await prisma.truck.findUnique({
         where: {
           truckCode_orgCode: {
@@ -30,11 +30,11 @@ export const truckRouter = createProtectedRouter()
         },
       });
       return { data };
-    },
-  })
-  .mutation("create", {
-    input: truckSchema,
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  create: protectedProcedure
+    .input(truckSchema)
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.truck.create({
         data: {
           ...input,
@@ -45,13 +45,15 @@ export const truckRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: truckSchema.omit({ truckCode: true }).partial().extend({
-      truckCode: truckSchema.shape.truckCode,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      truckSchema.omit({ truckCode: true }).partial().extend({
+        truckCode: truckSchema.shape.truckCode,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { truckCode, ...updatedFields } = input;
       const data = await prisma.truck.update({
         data: {
@@ -67,11 +69,11 @@ export const truckRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  })
-  .mutation("delete", {
-    input: z.string(),
-    resolve: async ({ input, ctx }) => {
+    }),
+
+  delete: protectedProcedure
+    .input(z.string())
+    .mutation(async ({ input, ctx }) => {
       const data = await prisma.truck.delete({
         where: {
           truckCode_orgCode: {
@@ -82,5 +84,5 @@ export const truckRouter = createProtectedRouter()
       });
 
       return { data };
-    },
-  });
+    }),
+});

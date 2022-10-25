@@ -15,7 +15,7 @@ export default function WarehouseCreatePage() {
     mutate: create,
     error,
     isError,
-  } = trpc.useMutation(["warehouse.create"], {
+  } = trpc.warehouse.create.useMutation({
     onSuccess: () => {
       router.push("/management/warehouses");
     },

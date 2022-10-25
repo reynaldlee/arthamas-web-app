@@ -12,10 +12,10 @@ import MUIDataTable from "mui-datatables";
 import { formatDate } from "@/utils/format";
 
 export default function ProductIndex() {
-  const { data, refetch, isLoading } = trpc.useQuery(["product.findAll"]);
+  const { data, refetch, isLoading } = trpc.product.findAll.useQuery();
   const tableId = useId();
 
-  const { mutate: deleteData } = trpc.useMutation(["product.delete"]);
+  const { mutate: deleteData } = trpc.product.delete.useMutation();
 
   const handleDelete = (id: string) => () => {
     deleteData(id, {
