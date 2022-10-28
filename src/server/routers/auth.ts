@@ -1,4 +1,4 @@
-import { publicProcedure, router } from "./../trpc";
+import { protectedProcedure, publicProcedure, router } from "./../trpc";
 import { JwtPayload } from "./../../types/user.types";
 import { prisma } from "@/prisma/index";
 import { TRPCError } from "@trpc/server";
@@ -56,4 +56,20 @@ export const authRouter = router({
         accessToken: accessToken,
       };
     }),
+
+  changeOrg: protectedProcedure.input(z.string()).mutation(({ input, ctx }) => {
+    const jwtPayload: JwtPayload = {
+      id: ctx.user!.id,
+      username: ctx.user!.username,
+      orgCode: input,
+    };
+
+    const accessToken = jwt.sign(jwtPayload, process.env.JWT_SECRET!, {
+      expiresIn: process.env.JWT_EXPIRES_IN!,
+    });
+
+    return {
+      accessToken: accessToken,
+    };
+  }),
 });

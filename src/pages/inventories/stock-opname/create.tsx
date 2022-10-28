@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { KeyboardEventHandler, useMemo, useState } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import _, { difference } from "lodash";
 import { trpc } from "@/utils/trpc";
@@ -32,10 +32,14 @@ import QrCodeIcon from "@mui/icons-material/QrCode";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { pick } from "lodash";
-import { stockTransferSchema } from "src/server/routers/stockTransfer";
+import {
+  stockTransferItemSchema,
+  stockTransferSchema,
+} from "src/server/routers/stockTransfer";
 import { DatePicker } from "@mui/x-date-pickers";
 import MUIDataTable from "mui-datatables";
 import { setDate } from "date-fns/esm";
+import { StockTransferItem } from "../stock-adjustment";
 
 type StockTransferFormValues = z.infer<typeof stockTransferSchema>;
 
@@ -49,7 +53,7 @@ export default function StockOpnameCreate() {
     control: stockTransferForm.control,
   });
 
-  const [data, setData] = useState<any>([]);
+  const [data, setData] = useState<StockTransferItem[]>([]);
 
   const createStockTransfer = trpc.stockTransfer.create.useMutation();
 
@@ -67,7 +71,7 @@ export default function StockOpnameCreate() {
     createStockTransfer.mutate(data);
   };
 
-  const handleBarcodeScan = (evt: KeyboardEvent<HTMLInputElement>) => {
+  const handleBarcodeScan: KeyboardEventHandler<HTMLInputElement> = (evt) => {
     // evt.preventDefault();
 
     if (evt.key === "Enter" || evt.keyCode === 13) {
@@ -75,7 +79,7 @@ export default function StockOpnameCreate() {
 
       if (evt.currentTarget.value === "11111") {
         const currentDataIndex = data.findIndex(
-          (item) => item.barcode === evt.target.value
+          (item) => item.barcode === evt.currentTarget.value
         );
         console.log("currentDataIndex", currentDataIndex);
 
@@ -117,7 +121,7 @@ export default function StockOpnameCreate() {
         evt.currentTarget.value = "";
       } else if (evt.currentTarget.value === "00000") {
         const currentDataIndex = data.findIndex(
-          (item) => item.barcode === evt.target.value
+          (item) => item.barcode === evt.currentTarget.value
         );
 
         if (currentDataIndex === -1) {

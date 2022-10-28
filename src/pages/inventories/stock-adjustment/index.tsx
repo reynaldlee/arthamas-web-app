@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { KeyboardEventHandler, useMemo, useState } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import _, { difference } from "lodash";
 import { trpc } from "@/utils/trpc";
@@ -39,6 +39,15 @@ import { setDate } from "date-fns/esm";
 
 type StockTransferFormValues = z.infer<typeof stockTransferSchema>;
 
+export type StockTransferItem = {
+  barcode: string;
+  productName: string;
+  packagingCode: string;
+  qtyCounted: number;
+  qtyOnHand: number;
+  difference: number;
+};
+
 export default function StockAdjustmentIndex() {
   const router = useRouter();
 
@@ -49,7 +58,7 @@ export default function StockAdjustmentIndex() {
     control: stockTransferForm.control,
   });
 
-  const [data, setData] = useState<any>([]);
+  const [data, setData] = useState<StockTransferItem[]>([]);
 
   const createStockTransfer = trpc.stockTransfer.create.useMutation();
 
@@ -67,7 +76,7 @@ export default function StockAdjustmentIndex() {
     createStockTransfer.mutate(data);
   };
 
-  const handleBarcodeScan = (evt: KeyboardEvent<HTMLInputElement>) => {
+  const handleBarcodeScan: KeyboardEventHandler<HTMLInputElement> = (evt) => {
     // evt.preventDefault();
 
     if (evt.key === "Enter" || evt.keyCode === 13) {
@@ -75,7 +84,7 @@ export default function StockAdjustmentIndex() {
 
       if (evt.currentTarget.value === "11111") {
         const currentDataIndex = data.findIndex(
-          (item) => item.barcode === evt.target.value
+          (item) => item.barcode === evt.currentTarget.value
         );
         console.log("currentDataIndex", currentDataIndex);
 
@@ -117,7 +126,7 @@ export default function StockAdjustmentIndex() {
         evt.currentTarget.value = "";
       } else if (evt.currentTarget.value === "00000") {
         const currentDataIndex = data.findIndex(
-          (item) => item.barcode === evt.target.value
+          (item) => item.barcode === evt.currentTarget.value
         );
 
         if (currentDataIndex === -1) {

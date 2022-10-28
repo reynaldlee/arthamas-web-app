@@ -50,7 +50,7 @@ export default function InventoryIndex() {
         title=""
         options={{
           tableId: useId(),
-          isRowSelectable: false,
+          isRowSelectable: () => false,
           print: false,
         }}
         data={data?.data || []}
