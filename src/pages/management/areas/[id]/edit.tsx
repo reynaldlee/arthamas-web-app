@@ -17,10 +17,10 @@ export default function PortEditPage() {
   const router = useRouter();
   const { id } = router.query as RouterQuery;
 
-    const { data } = trpc.area.find.useQuery(id, {
-        staleTime: 0,
-        trpc: {}
-    });
+  const { data } = trpc.area.find.useQuery(id, {
+    staleTime: 0,
+    trpc: {},
+  });
 
   const updateMutatation = trpc.area.update.useMutation({
     onSuccess: () => {
