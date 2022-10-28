@@ -17,10 +17,10 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "@/components/*": ["./src/components/*"],
-      "@/utils/*": ["./src/utils/*"],
-      "@/pages/*": ["./src/pages/*"],
-      "@/prisma/*": ["./prisma/*"]
+      "@/components/*": ["src/components/*"],
+      "@/utils/*": ["src/utils/*"],
+      "@/pages/*": ["src/pages/*"],
+      "@/prisma/*": ["prisma/*"]
     }
   },
   "include": [
