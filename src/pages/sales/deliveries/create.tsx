@@ -2,11 +2,14 @@ import { useEffect, KeyboardEvent, useState, useMemo } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import _, { sumBy } from "lodash";
 import { trpc } from "@/utils/trpc";
+import { QrReader } from "react-qr-reader";
+
 import {
   Autocomplete,
   Button,
   Divider,
   Grid,
+  Modal,
   Paper,
   Table,
   TableBody,
@@ -44,6 +47,7 @@ type QueryParams = {
 export default function SalesDeliveryCreate() {
   const router = useRouter();
   const { goodsReleaseOrderDocNo } = router.query as QueryParams;
+  const [showQrScanner, setShowQrScanner] = useState(false);
 
   const { register, watch, setValue, getValues, handleSubmit, control, reset } =
     useForm<SalesDeliveryFormValues>();
@@ -60,10 +64,10 @@ export default function SalesDeliveryCreate() {
 
   const goodsReleaseOrder = trpc.goodsReleaseOrder.find.useQuery(
     goodsReleaseOrderDocNo!,
-      {
-          enabled: !!goodsReleaseOrderDocNo,
-          trpc: {}
-      }
+    {
+      enabled: !!goodsReleaseOrderDocNo,
+      trpc: {},
+    }
   );
 
   const truckList = trpc.truck.findAll.useQuery();
@@ -321,16 +325,38 @@ export default function SalesDeliveryCreate() {
 
         <Box>
           <Typography variant="h2">VALIDATE PRODUCTS</Typography>
-          <TextField
-            sx={{ my: 2 }}
-            placeholder="Product Barcode"
-            inputProps={{
-              onKeyDown: handleBarcodeScan,
-            }}
-            InputProps={{
-              endAdornment: <QrCodeIcon />,
-            }}
-          ></TextField>
+
+          <Box display="flex" flexDirection="row">
+            <TextField
+              sx={{ my: 2 }}
+              placeholder="Product Barcode"
+              inputProps={{
+                onKeyDown: handleBarcodeScan,
+              }}
+              InputProps={{
+                endAdornment: <QrCodeIcon />,
+              }}
+            ></TextField>
+
+            <Button onClick={() => setShowQrScanner(true)}>QR CAMERA</Button>
+          </Box>
+
+          {showQrScanner ? (
+            <QrReader
+              constraints={{}}
+              onResult={(result, error) => {
+                if (!!result) {
+                  // setData(result?.text);
+                  alert(result);
+                }
+
+                if (!!error) {
+                  console.info(error);
+                }
+              }}
+              videoStyle={{ width: 300, height: 300 }}
+            />
+          ) : null}
 
           <MUIDataTable
             data={watch("salesDeliveryItemDetails")}
