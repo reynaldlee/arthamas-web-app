@@ -215,7 +215,7 @@ model Vessel {
 
 model VesselProduct {
   vesselCode  String  @db.VarChar(20)
-  productCode String  @db.VarChar(20)
+  productCode String
   vessel      Vessel  @relation(fields: [vesselCode, orgCode], references: [vesselCode, orgCode])
   product     Product @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   orgCode     String
@@ -383,7 +383,7 @@ model File {
 }
 
 model Product {
-  productCode           String                  @db.VarChar(20)
+  productCode           String
   name                  String                  @db.VarChar(40)
   desc                  String?                 @db.Text
   sku                   String?                 @db.VarChar(20)
@@ -437,7 +437,7 @@ model ProductGrade {
 }
 
 model ProductPackaging {
-  productCode           String                  @db.VarChar(20)
+  productCode           String
   packagingCode         String                  @db.VarChar(10)
   packaging             Packaging               @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
   orgCode               String                  @db.VarChar(20)
@@ -544,7 +544,7 @@ model BankAccount {
 }
 
 model ProductPrices {
-  productCode  String    @db.VarChar(20)
+  productCode  String
   product      Product   @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   portCode     String    @db.VarChar(10)
   port         Port      @relation(fields: [portCode, orgCode], references: [portCode, orgCode])
@@ -638,7 +638,7 @@ model ProductCategory {
 }
 
 model Inventory {
-  productCode      String           @db.VarChar(20)
+  productCode      String
   product          Product          @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packagingCode    String           @db.VarChar(10)
   productPackaging ProductPackaging @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
@@ -659,7 +659,7 @@ model Inventory {
 }
 
 model InventoryMovement {
-  productCode      String           @db.VarChar(20)
+  productCode      String
   packagingCode    String           @db.VarChar(10)
   productPackaging ProductPackaging @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
   qty              Decimal          @db.Decimal(15, 2)
@@ -747,7 +747,7 @@ model SalesQuoteItem {
   docNo            String           @db.VarChar(40)
   lineNo           Int
   salesQuote       SalesQuote       @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
-  productCode      String           @db.VarChar(20)
+  productCode      String
   product          Product          @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packagingCode    String           @db.VarChar(10)
   packaging        Packaging        @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
@@ -839,7 +839,7 @@ model SalesOrder {
 model SalesOrderItem {
   docNo                  String                  @db.VarChar(40)
   lineNo                 Int
-  productCode            String                  @db.VarChar(20)
+  productCode            String
   packagingCode          String                  @db.VarChar(10)
   packaging              Packaging               @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
   product                Product                 @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
@@ -914,7 +914,7 @@ model GoodsReleaseOrderItem {
   docNo                String            @db.VarChar(40)
   lineNo               Int
   goodsReleaseOrder    GoodsReleaseOrder @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
-  productCode          String            @db.VarChar(20)
+  productCode          String
   product              Product           @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packagingCode        String            @db.VarChar(10)
   productPackaging     ProductPackaging  @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
@@ -995,7 +995,7 @@ model SalesDeliveryItem {
   desc                     String?
   salesDelivery            SalesDelivery             @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
   productPackaging         ProductPackaging          @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
-  productCode              String                    @db.VarChar(20)
+  productCode              String
   packagingCode            String                    @db.VarChar(10)
   qty                      Decimal                   @db.Decimal(15, 2)
   salesOrderItemLineNo     Int
@@ -1078,7 +1078,7 @@ model SalesInvoiceItem {
   product                 Product            @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   orgCode                 String             @db.VarChar(20)
   org                     Org                @relation(fields: [orgCode], references: [orgCode])
-  productCode             String             @db.VarChar(40)
+  productCode             String
   packagingCode           String             @db.VarChar(40)
   packaging               Packaging          @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
   productPackaging        ProductPackaging   @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
@@ -1245,7 +1245,7 @@ model PurchaseOrderItem {
   lineNo               Int
   desc                 String?
   purchaseOrder        PurchaseOrder         @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
-  productCode          String                @db.VarChar(20)
+  productCode          String
   product              Product               @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packagingCode        String                @db.VarChar(10)
   productPackaging     ProductPackaging      @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
@@ -1332,7 +1332,7 @@ model StockTransferItem {
   docNo            String           @db.VarChar(40)
   stockTransfer    StockTransfer    @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
   lineNo           Int
-  productCode      String           @db.VarChar(20)
+  productCode      String
   product          Product          @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packagingCode    String           @db.VarChar(10)
   productPackaging ProductPackaging @relation(fields: [productCode, packagingCode, orgCode], references: [productCode, packagingCode, orgCode])
@@ -1406,7 +1406,7 @@ model PurchaseReceiptItem {
   purchaseReceipt     PurchaseReceipt       @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
   purchaseOrderDocNo  String                @db.VarChar(40)
   purchaseOrderLineNo Int
-  productCode         String                @db.VarChar(20)
+  productCode         String
   product             Product               @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packaging           Packaging             @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
   packagingCode       String                @db.VarChar(10)
@@ -1457,7 +1457,7 @@ model PurchaseInvoiceItem {
   purchaseReceiptDocNo     String              @db.VarChar(40)
   purchaseReceiptLineNo    Int
   purchaseReceiptItem      PurchaseReceiptItem @relation(fields: [purchaseReceiptDocNo, purchaseReceiptLineNo, orgCode], references: [docNo, lineNo, orgCode])
-  productCode              String              @db.VarChar(20)
+  productCode              String
   packaging                Packaging           @relation(fields: [packagingCode, orgCode], references: [packagingCode, orgCode])
   product                  Product             @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   packagingCode            String              @db.VarChar(10)
@@ -1546,7 +1546,7 @@ enum SKTDType {
 model SKTDItem {
   docNo           String  @db.VarChar(40)
   lineNo          Int
-  productCode     String  @db.VarChar(20)
+  productCode     String
   product         Product @relation(fields: [productCode, orgCode], references: [productCode, orgCode])
   totalVolume     Decimal @db.Decimal(15, 2)
   remainingVolume Decimal @db.Decimal(15, 2)
