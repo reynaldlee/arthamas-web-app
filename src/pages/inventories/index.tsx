@@ -18,6 +18,7 @@ import {
   TextField,
   MenuItem,
   IconButton,
+  Autocomplete,
 } from "@mui/material";
 
 import AddIcon from "@mui/icons-material/AddRounded";
@@ -38,12 +39,41 @@ type ProductPackagingFormValues = z.infer<typeof productPackagingSchema>;
 export default function InventoryIndex() {
   const router = useRouter();
 
+  const [selectedWarehouseCode, setSelectedWarehouseCode] = useState();
+
+  const warehouse = trpc.warehouse.findAll.useQuery({
+    warehouseCode: selectedWarehouseCode,
+  });
+
   const { data, refetch, isLoading } = trpc.inventory.findAll.useQuery();
 
   return (
     <MainLayout>
       <Box p={2}>
         <Typography variant="h3">Inventory</Typography>
+      </Box>
+
+      <Box p={2}>
+        <Typography variant="h5">Filters</Typography>
+
+        <Grid container mt={1}>
+          <Grid item xs={12} md={4}>
+            <Autocomplete
+              getOptionLabel={(option) => `${option.name}`}
+              loading={warehouse.isLoading}
+              isOptionEqualToValue={(opt, value) =>
+                opt.warehouseCode === value.warehouseCode
+              }
+              options={warehouse.data?.data || []}
+              renderInput={(params) => (
+                <TextField label="Warehouse" {...params} fullWidth></TextField>
+              )}
+              onChange={(_, value) => {
+                setSelectedWarehouseCode(value?.warehouseCode);
+              }}
+            ></Autocomplete>
+          </Grid>
+        </Grid>
       </Box>
 
       <MUIDataTable
@@ -67,7 +97,7 @@ export default function InventoryIndex() {
           {
             label: "Grade",
             name: "product",
-            options: { customBodyRender: (data) => data.name },
+            options: { customBodyRender: (data) => data.productGrade.name },
           },
           {
             label: "Packaging",

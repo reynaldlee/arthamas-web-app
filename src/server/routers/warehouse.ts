@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
@@ -12,15 +13,31 @@ export const warehouseSchema = z.object({
 });
 
 export const warehouseRouter = router({
-  findAll: protectedProcedure.query(async ({ ctx }) => {
-    const data = await prisma.warehouse.findMany({
-      where: { orgCode: ctx.user.orgCode },
-      include: {
-        area: { select: { areaCode: true, areaName: true } },
-      },
-    });
-    return { data };
-  }),
+  findAll: protectedProcedure
+    .input(
+      z
+        .object({
+          warehouseCode: warehouseSchema.shape.warehouseCode
+            .optional()
+            .nullable(),
+        })
+        .optional()
+    )
+    .query(async ({ input, ctx }) => {
+      const where: Prisma.WarehouseWhereInput = { orgCode: ctx.user.orgCode };
+
+      if (input?.warehouseCode) {
+        where.warehouseCode = input.warehouseCode;
+      }
+
+      const data = await prisma.warehouse.findMany({
+        where: where,
+        include: {
+          area: { select: { areaCode: true, areaName: true } },
+        },
+      });
+      return { data };
+    }),
 
   find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const data = await prisma.warehouse.findUnique({
