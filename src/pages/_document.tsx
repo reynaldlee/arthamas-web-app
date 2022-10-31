@@ -4,6 +4,8 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        <link rel="icon" type="image/png" href="arthamas-logo.png" />
+
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
