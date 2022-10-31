@@ -17,8 +17,8 @@ export const productPackagingSchema = z.object({
 });
 
 export const productSchema = z.object({
-  productCode: z.string().max(20),
-  name: z.string().max(40),
+  productCode: z.string(),
+  name: z.string(),
   desc: z.string().optional(),
   sku: z.string().optional(),
   nptNumber: z.string().optional(),
