@@ -1,7 +1,6 @@
 import { protectedProcedure } from "./../trpc";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
 import { router } from "../trpc";
 
 export const customerGroupSchema = z.object({

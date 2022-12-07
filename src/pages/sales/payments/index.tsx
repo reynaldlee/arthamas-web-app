@@ -3,32 +3,19 @@ import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 import { LoaderModal } from "@/components/Loader";
 import Link from "next/link";
-import {
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  Paper,
-  Typography,
-} from "@mui/material";
 
-import PaymentIcon from "@mui/icons-material/Payment";
-import DueTodayIcon from "@mui/icons-material/CalendarToday";
-import DeliveryIn7Days from "@mui/icons-material/LocalShipping";
-
-import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 import { formatDate, formatMoney } from "@/utils/format";
-import StatusBadge from "@/components/Badges/StatusBadge";
 import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function SalesPaymentIndex() {
   const { data, isLoading } = trpc.salesPayment.findAll.useQuery();
+
   const tableId = useId();
   const router = useRouter();
 
-  const { mutate: cancelInvoice } = trpc.salesInvoice.cancel.useMutation();
+  const deletePayment = trpc.salesPayment.delete.useMutation();
 
   return (
     <MainLayout>
@@ -56,16 +43,6 @@ export default function SalesPaymentIndex() {
             },
           },
           {
-            label: "Status",
-            name: "status",
-            options: {
-              customBodyRender: (status) => (
-                <StatusBadge status={status}></StatusBadge>
-              ),
-            },
-          },
-
-          {
             label: "Currency",
             name: "currencyCode",
           },
@@ -89,22 +66,10 @@ export default function SalesPaymentIndex() {
                         {
                           label: "Edit",
                           onClick: () =>
-                            router.push(`/sales/invoices/${id}/edit`),
+                            router.push(`/sales/purchases/${id}/edit`),
                         },
                         {
-                          label: "Print Invoice",
-                          onClick: () =>
-                            router.push(`/sales/invoices/${id}/print`),
-                        },
-                        {
-                          label: "Create Payment",
-                          onClick: () =>
-                            router.push(
-                              `/sales/payments/create?salesDeliveryDocNo=${id}`
-                            ),
-                        },
-                        {
-                          label: "Cancel",
+                          label: "Delete Payment",
                           danger: true,
                           onClick: () => {
                             if (
@@ -112,8 +77,11 @@ export default function SalesPaymentIndex() {
                                 `Are you sure you want to cancel ${id}`
                               )
                             ) {
-                              cancelOrder(id);
-                              router.reload();
+                              deletePayment.mutate(id, {
+                                onSuccess: () => {
+                                  router.reload();
+                                },
+                              });
                             }
                           },
                         },

@@ -190,34 +190,48 @@ export const purchaseOrderRouter = router({
         fields;
 
       const data = await prisma.$transaction(async (prisma) => {
-        await prisma.purchaseOrderItem.deleteMany({
+        const purchaseReceipts = await prisma.purchaseReceipt.aggregate({
+          _count: {
+            _all: true,
+          },
           where: {
-            docNo: docNo,
+            purchaseOrderDocNo: docNo,
             orgCode: ctx.user.orgCode,
           },
         });
 
-        await prisma.purchaseOrderItem.createMany({
-          data: purchaseOrderItems.map((item) => ({
-            docNo: docNo,
-            orgCode: ctx.user.orgCode,
-            ...item,
-          })),
-        });
+        if (purchaseReceipts._count._all === 0) {
+          // if purchase receipts already happened
+          await prisma.purchaseOrderItem.deleteMany({
+            where: { docNo: docNo, orgCode: ctx.user.orgCode },
+          });
 
-        // await prisma.purchaseOrderServices.deleteMany({
-        //   where: {
-        //     docNo: docNo,
-        //   },
-        // });
+          await prisma.purchaseOrderItem.createMany({
+            data: purchaseOrderItems.map((item) => ({
+              docNo: docNo,
+              orgCode: ctx.user.orgCode,
+              ...item,
+            })),
+          });
+        } else {
+          const poItemsUptatePromises = purchaseOrderItems.map(async (item) => {
+            return prisma.purchaseOrderItem.update({
+              data: {
+                unitPrice: item.unitPrice,
+                amount: item.amount,
+              },
+              where: {
+                docNo_lineNo_orgCode: {
+                  docNo: docNo,
+                  lineNo: item.lineNo,
+                  orgCode: ctx.user.orgCode,
+                },
+              },
+            });
+          });
 
-        // await prisma.purchaseOrderService.createMany({
-        //   data: purchaseOrderServices.map((item) => ({
-        //     docNo: docNo,
-        //     orgCode: ctx.user.orgCode,
-        //     ...item,
-        //   })) as any,
-        // });
+          await Promise.all(poItemsUptatePromises);
+        }
 
         return await prisma.purchaseOrder.update({
           data: updatedField,

@@ -1,8 +1,7 @@
 import { protectedProcedure } from "./../trpc";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
-import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
+
 import { router } from "../trpc";
 
 export const inventoryRouter = router({

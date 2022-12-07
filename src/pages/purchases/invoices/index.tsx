@@ -3,135 +3,91 @@ import MainLayout from "@/components/Layouts/MainLayout";
 import { trpc } from "@/utils/trpc";
 import { LoaderModal } from "@/components/Loader";
 import Link from "next/link";
-import {
-  Box,
-  Button,
-  Grid,
-  IconButton,
-  Paper,
-  Typography,
-} from "@mui/material";
-
-import ActiveIcon from "@mui/icons-material/AllOutSharp";
-import DeliveryToday from "@mui/icons-material/Today";
-import DeliveryIn7Days from "@mui/icons-material/LocalShipping";
+import { Box, Button } from "@mui/material";
 
 import { Add } from "@mui/icons-material";
 import MUIDataTable from "mui-datatables";
 import { formatDate, formatMoney } from "@/utils/format";
 import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
+import StatusBadge from "@/components/Badges/StatusBadge";
 
 export default function PurchaseInvoiceIndex() {
-  const { data, isLoading } = trpc.purchaseReceipt.findAll.useQuery();
+  const { data, isLoading } = trpc.purchaseInvoice.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
   return (
     <MainLayout>
-      {/* <Box>
-        <Grid container spacing={2}>
-          <Grid item md={4}>
-            <Paper sx={{ p: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item>
-                  <ActiveIcon fontSize="large" />
-                </Grid>
-                <Grid item>
-                  <Typography variant="overline">Active</Typography>
-                  <Box>
-                    <Typography variant="h2">4</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Paper>
-          </Grid>
-          <Grid item md={4}>
-            <Paper sx={{ p: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item>
-                  <DeliveryToday fontSize="large" />
-                </Grid>
-                <Grid item>
-                  <Typography variant="overline">Delivery Today</Typography>
-                  <Box>
-                    <Typography variant="h2">1</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Paper>
-          </Grid>
-
-          <Grid item md={4}>
-            <Paper sx={{ p: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item>
-                  <DeliveryIn7Days fontSize="large" />
-                </Grid>
-                <Grid item>
-                  <Typography variant="overline">Delivery In 7 days</Typography>
-                  <Box>
-                    <Typography variant="h2">5</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box> */}
-
       <Box p={2}>
-        <Link href="/purchases/receipt/create">
+        <Link href="/purchases/invoices/create">
           <Button variant="contained" startIcon={<Add />}>
-            Create Purchase Receipt
+            Create Purchase Invoice
           </Button>
         </Link>
       </Box>
 
       <MUIDataTable
-        title="Penerimaan Pembelian"
+        title="Purchase Invoices"
         options={{
           tableId: tableId,
           selectableRowsHideCheckboxes: true,
         }}
+        data={data?.data || []}
         columns={[
           {
-            label: "PO No",
+            label: "Inv No",
             name: "docNo",
-            options: {
-              customBodyRender: (docNo) => (
-                <Link href={`/purchases/receipt/${docNo}`}>
-                  <a>{docNo}</a>
-                </Link>
-              ),
-            },
           },
           {
-            label: "DO No",
-            name: "deliveryNoteNo",
-          },
-          {
-            label: "Tgl Penerimaan",
+            label: "Inv Date",
             name: "date",
             options: {
               customBodyRender: formatDate,
             },
           },
           {
-            label: "Supplier",
-            name: "purchaseOrder",
+            label: "Delivery Note (Surat Jalan)",
+            name: "purchaseReceipt",
             options: {
-              customBodyRender: (purchaseOrder) => purchaseOrder.supplier.name,
+              customBodyRender: (pr) => pr.deliveryNoteNo,
             },
           },
           {
-            label: "Warehouse",
-            name: "warehouse",
+            label: "Due Date",
+            name: "dueDate",
             options: {
-              customBodyRender: (wh) => wh.name,
+              customBodyRender: formatDate,
             },
           },
-
+          {
+            label: "DO No",
+            name: "purchaseReceiptDocNo",
+          },
+          {
+            label: "Supplier",
+            name: "purchaseReceipt",
+            options: {
+              customBodyRender: (purchaseReceipt) =>
+                purchaseReceipt.purchaseOrder.supplier.name,
+            },
+          },
+          {
+            label: "Status",
+            name: "status",
+            options: {
+              customBodyRender: (status) => (
+                <StatusBadge status={status}></StatusBadge>
+              ),
+            },
+          },
+          {
+            label: "Amount",
+            name: "totalAmount",
+            options: {
+              customBodyRender: formatMoney,
+            },
+          },
           {
             name: "docNo",
             label: "Action",
@@ -156,7 +112,6 @@ export default function PurchaseInvoiceIndex() {
             },
           },
         ]}
-        data={data?.data || []}
       />
       <LoaderModal open={isLoading} />
     </MainLayout>

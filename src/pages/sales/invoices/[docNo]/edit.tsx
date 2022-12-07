@@ -7,11 +7,9 @@ import {
   Button,
   Checkbox,
   Divider,
+  FormHelperText,
   Grid,
-  IconButton,
-  MenuItem,
   Paper,
-  Switch,
   Table,
   TableBody,
   TableCell,
@@ -43,74 +41,62 @@ import { getWithholdingTaxRate } from "@/utils/tax";
 type SalesInvoiceFormValues = z.infer<typeof salesInvoiceSchema>;
 
 type QueryParams = {
-  salesQuoteDocNo?: string;
+  docNo: string;
 };
 
 export default function SalesInvoiceCreate() {
   const router = useRouter();
-  const { salesQuoteDocNo } = router.query as QueryParams;
+  const { docNo } = router.query as QueryParams;
 
   const { register, watch, setValue, handleSubmit, control, reset } =
     useForm<SalesInvoiceFormValues>();
 
-  const salesDeliveryList = trpc.salesDelivery.findOpenStatus.useQuery();
-  const bankAccountList = trpc.bankAccount.findAll.useQuery();
-  const salesDeliveryDocNo = watch("salesDeliveryDocNo");
-
-  const salesDelivery = trpc.salesDelivery.find.useQuery(salesDeliveryDocNo, {
-    enabled: !!salesDeliveryDocNo,
+  const salesInvoiceQuery = trpc.salesInvoice.find.useQuery(docNo, {
     onSuccess(data) {
-      const delivery = data.data;
-      const { salesOrder } = delivery;
-      const exchangeRate = delivery?.salesOrder.exchangeRate;
-
-      const salesInvoiceItems = delivery.salesDeliveryItems.map(
+      const salesInvoice = data.data;
+      const exchangeRate = salesInvoice?.exchangeRate;
+      const salesInvoiceItems = salesInvoice?.salesInvoiceItems.map(
         (item, index) => ({
           lineNo: index + 1,
           qty: item.qty,
-          unitQty: item.salesOrderItem.unitQty,
-          totalUnitQty: item.qty * item.salesOrderItem.unitQty,
-          unitCode: item.salesOrderItem.unitCode,
-          packagingCode: item.salesOrderItem.packagingCode,
-          unitPrice: item.salesOrderItem.unitPrice,
-          desc: item.salesOrderItem.desc,
-          productCode: item.salesOrderItem.productCode,
-          amount:
-            item.qty *
-            item.salesOrderItem.unitQty *
-            item.salesOrderItem.unitPrice *
-            exchangeRate,
+          unitQty: item.unitQty,
+          totalUnitQty: item.totalUnitQty,
+          unitCode: item.unitCode,
+          packagingCode: item.packagingCode,
+          unitPrice: item.unitPrice,
+          desc: item.desc,
+          productCode: item.productCode,
+          amount: item.qty * item.unitQty * item.unitPrice * exchangeRate,
         })
       );
 
       const totalProduct = _.sumBy(salesInvoiceItems, (o) => o.amount);
-      const taxRate = salesOrder.taxRate;
-      const taxAmount = totalProduct * taxRate;
-      const totalBeforeTax = totalProduct;
-      const totalAmount = taxAmount + totalBeforeTax;
 
       reset({
-        currencyCode: salesOrder.currencyCode,
-        customerCode: salesOrder.customerCode,
-        date: new Date(),
-        taxCode: salesOrder.taxCode,
-        totalProduct: totalProduct,
-        totalService: 0,
-        totalBeforeTax: totalBeforeTax,
-        taxAmount: taxAmount,
-        taxRate: salesOrder.taxRate,
-        totalAmount: totalAmount,
-        dueDate: addDays(new Date(), salesOrder.customer.top),
         exchangeRate: exchangeRate,
-        salesDeliveryDocNo: delivery.docNo,
-        poNumber: salesOrder.poNumber,
+        currencyCode: salesInvoice?.currencyCode,
+        customerCode: salesInvoice?.customerCode,
+        date: new Date(salesInvoice?.date!),
+        dueDate: new Date(salesInvoice?.dueDate!),
+        taxCode: salesInvoice?.taxCode,
+        totalProduct: totalProduct,
+        salesDeliveryDocNo: salesInvoice?.salesDeliveryDocNo,
+        withholdingTaxAmount: salesInvoice?.withholdingTaxAmount,
+        withholdingTaxRate: salesInvoice?.withholdingTaxRate,
+        totalService: 0,
+        totalBeforeTax: salesInvoice?.totalBeforeTax,
+        taxAmount: salesInvoice?.taxAmount,
+        taxRate: salesInvoice?.taxRate,
+        totalAmount: salesInvoice?.totalAmount,
         salesInvoiceItems: salesInvoiceItems,
+        bankAccountCode: salesInvoice?.bankAccountCode,
       });
     },
-    trpc: {},
   });
 
-  const taxList = trpc.tax.findAll.useQuery();
+  const bankAccountList = trpc.bankAccount.findAll.useQuery();
+
+  // const taxList = trpc.tax.findAll.useQuery();
   // const serviceList = trpc.useQuery(["service.findAll"]);
   // const warehouseList = trpc.useQuery(["warehouse.findAll"]);
 
@@ -120,17 +106,23 @@ export default function SalesInvoiceCreate() {
     }
   };
 
-  const createSalesInvoice = trpc.salesInvoice.create.useMutation();
+  const updateSalesInvoice = trpc.salesInvoice.update.useMutation();
 
   const onSubmit: SubmitHandler<SalesInvoiceFormValues> = (data) => {
-    createSalesInvoice.mutate(data, {
-      onError: (err) => {
-        console.log(err);
+    updateSalesInvoice.mutate(
+      {
+        docNo: docNo,
+        fields: data,
       },
-      onSuccess: (err) => {
-        router.push("/sales/invoices");
-      },
-    });
+      {
+        onError: (err) => {
+          console.log(err);
+        },
+        onSuccess: (err) => {
+          router.push("/sales/invoices");
+        },
+      }
+    );
   };
 
   const handleProductQtyChange = (index: number) => (value: number) => {
@@ -213,31 +205,20 @@ export default function SalesInvoiceCreate() {
   return (
     <MainLayout>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3">Create Sales Invoice</Typography>
+        <Typography variant="h3">Edit Sales Invoice</Typography>
       </Box>
 
       <Paper sx={{ p: 2 }}>
         <Grid container gap={2} sx={{ pt: 2 }}>
           <Grid item md={4} xs={12}>
-            <Autocomplete
-              options={(salesDeliveryList.data?.data || []).map(
-                (item) => item.docNo
-              )}
-              onChange={(_, value) => {
-                setValue("salesDeliveryDocNo", value);
-              }}
-              disableClearable
-              renderInput={(params) => (
-                <TextField {...params} label="Sales Delivery No" />
-              )}
-            />
+            <Typography variant="h2">{docNo}</Typography>
           </Grid>
 
           <Grid item md={2} xs={6}>
             <Box>
               <Typography variant="h4">Currency</Typography>
               <Typography>
-                {salesDelivery.data?.data?.salesOrder.currencyCode}
+                {salesInvoiceQuery.data?.data?.currencyCode}
               </Typography>
             </Box>
           </Grid>
@@ -266,13 +247,13 @@ export default function SalesInvoiceCreate() {
           <Grid item md={3} xs={6}>
             <Typography variant="h4">Customer PO No</Typography>
             <Typography>
-              {salesDelivery.data?.data?.salesOrder.poNumber}
+              {salesInvoiceQuery.data?.data?.salesOrder.poNumber}
             </Typography>
           </Grid>
           <Grid item md={2} xs={6}>
             <Typography variant="h4">Customer PO Date</Typography>
             <Typography>
-              {formatDate(salesDelivery.data?.data?.salesOrder.poDate!)}
+              {formatDate(salesInvoiceQuery.data?.data?.salesOrder.poDate!)}
             </Typography>
           </Grid>
         </Grid>
@@ -281,16 +262,16 @@ export default function SalesInvoiceCreate() {
           <Grid item md={3} xs={6}>
             <Typography variant="h4">Customer</Typography>
             <Typography>
-              {salesDelivery.data?.data?.salesOrder.customer.name}
+              {salesInvoiceQuery.data?.data?.customer.name}
             </Typography>
             <Typography>
-              {salesDelivery.data?.data?.salesOrder.customer.address}
+              {salesInvoiceQuery.data?.data?.customer.address}
             </Typography>
           </Grid>
           <Grid item md={2} xs={6}>
             <Typography variant="h4">Vessel</Typography>
             <Typography>
-              {salesDelivery.data?.data?.salesOrder.vessel.name}
+              {salesInvoiceQuery.data?.data?.salesOrder.vessel.name}
             </Typography>
           </Grid>
         </Grid>
@@ -299,7 +280,7 @@ export default function SalesInvoiceCreate() {
           <Grid item md={3} xs={6}>
             <Typography variant="h4">Ship To</Typography>
             <Typography>
-              {salesDelivery.data?.data?.salesOrder.shipTo}
+              {salesInvoiceQuery.data?.data?.salesOrder.shipTo}
             </Typography>
           </Grid>
         </Grid>
@@ -312,7 +293,7 @@ export default function SalesInvoiceCreate() {
               <DatePicker
                 label="Invoice Date"
                 onChange={(value) => {
-                  setValue("date", value!);
+                  setValue("date", value);
                 }}
                 value={watch("date")}
                 renderInput={(params) => (
@@ -324,7 +305,7 @@ export default function SalesInvoiceCreate() {
               <DatePicker
                 label="Due Date"
                 onChange={(value) => {
-                  setValue("dueDate", value!);
+                  setValue("dueDate", value);
                 }}
                 value={watch("dueDate")}
                 renderInput={(params) => (
@@ -400,13 +381,13 @@ export default function SalesInvoiceCreate() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(salesDelivery.data.data?.salesDeliveryItems || []).map(
+                  {(salesInvoiceQuery?.data.data?.salesInvoiceItems || []).map(
                     (item, index) => (
                       <TableRow key={index}>
                         <TableCell sx={{ padding: 0.5 }}>
                           <TextField
                             disabled
-                            value={item.salesOrderItem.product.name}
+                            value={item.product.name}
                             size="small"
                             InputLabelProps={{
                               shrink: true,
@@ -434,7 +415,7 @@ export default function SalesInvoiceCreate() {
                         <TableCell sx={{ padding: 0.5 }}>
                           <TextField
                             disabled
-                            value={item.salesOrderItem.packagingCode}
+                            value={item.packagingCode}
                             size="small"
                             InputLabelProps={{
                               shrink: true,
@@ -445,7 +426,7 @@ export default function SalesInvoiceCreate() {
                         <TableCell sx={{ padding: 0.5 }}>
                           <TextField
                             disabled
-                            value={item.salesOrderItem.unitPrice}
+                            value={item.unitPrice}
                             size="small"
                             InputLabelProps={{
                               shrink: true,
@@ -787,7 +768,7 @@ export default function SalesInvoiceCreate() {
                 variant="contained"
                 color="error"
                 onClick={handleCancel}
-                disabled={createSalesInvoice.isLoading}
+                disabled={updateSalesInvoice.isLoading}
               >
                 Cancel
               </Button>
@@ -795,7 +776,7 @@ export default function SalesInvoiceCreate() {
             <Grid item>
               <Button
                 variant="contained"
-                disabled={createSalesInvoice.isLoading}
+                disabled={updateSalesInvoice.isLoading}
                 startIcon={<SaveAltOutlinedIcon />}
                 onClick={handleSubmit(onSubmit)}
               >
@@ -804,6 +785,12 @@ export default function SalesInvoiceCreate() {
             </Grid>
           </Grid>
         </>
+      ) : null}
+
+      {updateSalesInvoice.error ? (
+        <FormHelperText error sx={{ py: 10 }}>
+          {updateSalesInvoice.error.message}
+        </FormHelperText>
       ) : null}
     </MainLayout>
   );

@@ -46,38 +46,38 @@ export type NavMenu = {
 };
 
 const menuItems = [
-  {
-    heading: "Dashboard & Reports",
-    items: [
-      {
-        name: "Analytics",
-        icon: AnalyticsTwoToneIcon,
-        link: "/dashboards/analytics",
-      },
-      {
-        name: "Reports",
-        icon: AnalyticsTwoToneIcon,
-        items: [
-          {
-            name: "Sales Report",
-            link: "/reports/sales",
-          },
-          {
-            name: "Purchases Report",
-            link: "/reports/purchases",
-          },
-          {
-            name: "Inventory Report",
-            link: "/reports/inventory",
-          },
-          {
-            name: "Account Receivable Report",
-            link: "/reports/ar-aging",
-          },
-        ],
-      },
-    ],
-  },
+  // {
+  //   heading: "Dashboard & Reports",
+  //   items: [
+  //     {
+  //       name: "Analytics",
+  //       icon: AnalyticsTwoToneIcon,
+  //       link: "/dashboards/analytics",
+  //     },
+  //     {
+  //       name: "Reports",
+  //       icon: AnalyticsTwoToneIcon,
+  //       items: [
+  //         {
+  //           name: "Sales Report",
+  //           link: "/reports/sales",
+  //         },
+  //         {
+  //           name: "Purchases Report",
+  //           link: "/reports/purchases",
+  //         },
+  //         {
+  //           name: "Inventory Report",
+  //           link: "/reports/inventory",
+  //         },
+  //         {
+  //           name: "Account Receivable Report",
+  //           link: "/reports/ar-aging",
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
   {
     heading: "Data Management",
     items: [

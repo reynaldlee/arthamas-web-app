@@ -8,6 +8,7 @@ const StatusColor = {
   Cancelled: "red",
   Partial: "orange",
   OnProgress: "orange",
+  Paid: "green",
 };
 
 type Props = {

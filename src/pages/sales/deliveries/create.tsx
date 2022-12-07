@@ -399,8 +399,8 @@ export default function SalesDeliveryCreate() {
             <Button
               variant="contained"
               disabled={
-                createSalesDelivery.isLoading ||
-                totalItems !== (watch("salesDeliveryItemDetails") || []).length
+                createSalesDelivery.isLoading //||
+                // totalItems !== (watch("salesDeliveryItemDetails") || []).length
               }
               startIcon={<SaveAltOutlinedIcon />}
               onClick={handleSubmit(onSubmit)}

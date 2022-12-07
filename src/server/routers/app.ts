@@ -1,5 +1,5 @@
-import { purchaseReceiptRouter } from "./purchaseReceipt";
-import { purchaseOrderRouter } from "./purchaseOrder";
+import { publicProcedure, router } from "../trpc";
+
 import { roleRouter } from "./role";
 import { salesOrderRouter } from "./salesOrder";
 import { taxRouter } from "./tax";
@@ -30,7 +30,10 @@ import { salesPaymentRouter } from "./salesPayment";
 import { bankAccountRouter } from "./bankAccount";
 import { inventoryRouter } from "./inventory";
 import { stockTransferRouter } from "./stockTransfer";
-import { publicProcedure, router } from "../trpc";
+
+import { purchaseOrderRouter } from "./purchaseOrder";
+import { purchaseReceiptRouter } from "./purchaseReceipt";
+import { purchaseInvoiceRouter } from "./purchaseInvoice";
 
 /**
  * Create your application's root router
@@ -67,6 +70,7 @@ export const appRouter = router({
   role: roleRouter,
   profile: profileRouter,
   purchaseOrder: purchaseOrderRouter,
+  purchaseInvoice: purchaseInvoiceRouter,
   purchaseReceipt: purchaseReceiptRouter,
   service: serviceRouter,
   stockTransfer: stockTransferRouter,

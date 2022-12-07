@@ -1,3 +1,8 @@
+import { supplierSchema } from "./supplier";
+import { customerSchema } from "./customer";
+import { unitSchema } from "./unit";
+import { purchaseOrderSchema } from "src/server/routers/purchaseOrder";
+import { router, protectedProcedure } from "./../trpc";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { warehouseSchema } from "./warehouse";
@@ -6,163 +11,151 @@ import { packagingSchema } from "./packaging";
 import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
-import {
-  getPurchaseOrderToReceiptSummary,
-  purchaseOrderItemSchema,
-} from "./purchaseOrder";
+import { getPurchaseOrderToReceiptSummary } from "./purchaseOrder";
 
 export const purchaseInvoiceItemSchema = z.object({
+  lineNo: z.number().min(1),
   productCode: productSchema.shape.productCode,
   packagingCode: packagingSchema.shape.packagingCode,
-  purchaseOrderLineNo: purchaseOrderItemSchema.shape.lineNo,
+  purchaseReceiptDocNo: z.string(),
+  supplierCode: z.string(),
   qty: z.number(),
-  batchNo: z.string(),
-  unitCode: z.string(),
+  unitPrice: z.number(),
   unitQty: z.number(),
+  unitCode: unitSchema.shape.unitCode,
   totalUnitQty: z.number(),
+  amount: z.number(),
 });
 
 export const purchaseInvoiceSchema = z.object({
-  deliveryNoteNo: z.string().min(1),
   date: z.date(),
+  dueDate: z.date(),
+  purchaseReceiptDocNo: z.string(),
+  taxRate: z.number(),
+  taxAmount: z.number(),
+  supplierCode: supplierSchema.shape.supplierCode,
+  withholdingTaxRate: z.number(),
+  withholdingTaxAmount: z.number(),
+  totalBeforeTax: z.number(),
+  otherFees: z.number(),
   memo: z.string().optional().nullable(),
-  purchaseOrderDocNo: z.string(),
+  totalAmount: z.number(),
   purchaseInvoiceItems: purchaseInvoiceItemSchema.array(),
-  warehouseCode: warehouseSchema.shape.warehouseCode,
 });
 
-export const purchaseInvoiceRouter = createProtectedRouter()
-  .query("findAll", {
-    resolve: async ({ ctx }) => {
-      const data = await prisma.purchaseInvoice.findMany({
-        where: { orgCode: ctx.user.orgCode },
-        include: {
-          warehouse: { select: { name: true } },
-          purchaseOrder: {
-            select: {
-              supplier: { select: { supplierCode: true, name: true } },
-              date: true,
-              docNo: true,
-              dueDate: true,
+export const purchaseInvoiceRouter = router({
+  findAll: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.purchaseInvoice.findMany({
+      where: { orgCode: ctx.user.orgCode },
+      include: {
+        purchaseReceipt: {
+          include: {
+            warehouse: true,
+            purchaseOrder: {
+              include: {
+                supplier: true,
+              },
             },
           },
         },
-        orderBy: {
-          createdAt: "desc",
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return { data };
+  }),
+
+  find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+    const data = await prisma.purchaseInvoice.findUnique({
+      where: {
+        docNo_orgCode: {
+          docNo: input,
+          orgCode: ctx.user.orgCode,
         },
+      },
+      include: {
+        purchaseReceipt: true,
+        purchaseInvoiceItems: {
+          include: {
+            product: true,
+            packaging: true,
+          },
+        },
+      },
+    });
+
+    if (!data) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "No data found",
       });
+    }
 
-      return { data };
-    },
-  })
-  .query("find", {
-    input: z.string(),
-    resolve: async ({ ctx, input }) => {
-      const data = await prisma.purchaseInvoice.findUnique({
-        where: {
-          docNo_orgCode: {
-            docNo: input,
-            orgCode: ctx.user.orgCode,
-          },
-        },
-        include: {
-          warehouse: { select: { name: true } },
-          purchaseOrder: {
-            select: { docNo: true, supplier: true, orgCode: true },
-          },
-          purchaseInvoiceItems: {
-            include: {
-              product: true,
-              packaging: true,
-            },
-          },
-        },
-      });
+    return { data };
+  }),
 
-      if (!data) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "No data found",
-        });
-      }
-
-      return { data };
-    },
-  })
-  .mutation("create", {
-    input: purchaseInvoiceSchema,
-    resolve: async ({ input, ctx }) => {
+  create: protectedProcedure
+    .input(purchaseInvoiceSchema)
+    .mutation(async ({ input, ctx }) => {
       const { purchaseInvoiceItems, ...purchaseInvoice } = input;
-      const docNo = generateDocNo("PR-");
-      const orgCode = ctx.user.orgCode;
-
-      const actualReceiptItems = purchaseInvoiceItems.filter(
-        (item) => item.qty > 0
-      );
-
-      if (actualReceiptItems.length === 0) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "No quantity received",
-        });
-      }
+      const docNo = generateDocNo("PINV-");
 
       const data = await prisma.$transaction(async (prisma) => {
-        const pr = await prisma.purchaseInvoice.create({
+        const inv = await prisma.purchaseInvoice.create({
           data: {
             docNo: docNo,
-            memo: purchaseInvoice.memo,
-            date: purchaseInvoice.date,
-            purchaseOrder: {
+            ...purchaseInvoice,
+            purchaseReceiptDocNo: undefined,
+            status: "Open",
+            org: { connect: { orgCode: ctx.user.orgCode } },
+            createdBy: ctx.user.username,
+            updatedBy: ctx.user.username,
+            supplier: {
               connect: {
-                docNo_orgCode: {
-                  docNo: purchaseInvoice.purchaseOrderDocNo,
+                supplierCode_orgCode: {
+                  supplierCode: purchaseInvoice.supplierCode,
                   orgCode: ctx.user.orgCode,
                 },
               },
             },
-            deliveryNoteNo: purchaseInvoice.deliveryNoteNo,
-            purchaseInvoiceItems: {
-              createMany: {
-                data: actualReceiptItems.map((item, index) => ({
-                  ...item,
-                  lineNo: index + 1,
-                  purchaseOrderDocNo: purchaseInvoice.purchaseOrderDocNo,
-                })),
-              },
-            },
-            org: { connect: { orgCode: ctx.user.orgCode } },
-            warehouse: {
+            purchaseReceipt: {
               connect: {
-                warehouseCode_orgCode: {
-                  warehouseCode: purchaseInvoice.warehouseCode,
-                  orgCode: orgCode,
+                docNo_orgCode: {
+                  docNo: purchaseInvoice.purchaseReceiptDocNo,
+                  orgCode: ctx.user.orgCode,
                 },
               },
             },
-            createdBy: ctx.user.username,
-            updatedBy: ctx.user.username,
+            purchaseInvoiceItems: {
+              createMany: {
+                data: purchaseInvoiceItems.map((item, index) => ({
+                  ...item,
+                })),
+              },
+            },
           },
         });
 
-        await updatePurchaseOrderStatus(prisma, {
-          docNo: input.purchaseOrderDocNo,
-          orgCode: ctx.user.orgCode,
-        });
+        await updatePurchaseReceiptStatus(
+          prisma,
+          inv.purchaseReceiptDocNo,
+          ctx.user.orgCode
+        );
 
-        return pr;
+        return inv;
       });
 
       return { data };
-    },
-  })
-  .mutation("update", {
-    input: z.object({
-      docNo: z.string(),
-      fields: purchaseInvoiceSchema,
     }),
-    resolve: async ({ input, ctx }) => {
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        docNo: z.string(),
+        fields: purchaseInvoiceSchema,
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
       const { purchaseInvoiceItems, ...updatedField } = fields;
 
@@ -182,20 +175,6 @@ export const purchaseInvoiceRouter = createProtectedRouter()
           })),
         });
 
-        // await prisma.purchaseInvoiceServices.deleteMany({
-        //   where: {
-        //     docNo: docNo,
-        //   },
-        // });
-
-        // await prisma.purchaseInvoiceService.createMany({
-        //   data: purchaseInvoiceServices.map((item) => ({
-        //     docNo: docNo,
-        //     orgCode: ctx.user.orgCode,
-        //     ...item,
-        //   })) as any,
-        // });
-
         return await prisma.purchaseInvoice.update({
           data: updatedField,
           where: {
@@ -208,8 +187,31 @@ export const purchaseInvoiceRouter = createProtectedRouter()
       });
 
       return { data };
+    }),
+});
+
+const updatePurchaseReceiptStatus = async (
+  prisma: Prisma.TransactionClient,
+  purchaseReceiptDocNo: string,
+  orgCode: string
+) => {
+  const countPurchaseInvoice = await prisma.purchaseInvoice.count({
+    where: {
+      orgCode: orgCode,
+      purchaseReceiptDocNo: purchaseReceiptDocNo,
+      status: { not: "Cancelled" },
     },
   });
+
+  if (countPurchaseInvoice > 0) {
+    await prisma.purchaseReceipt.update({
+      data: { status: "Completed" },
+      where: {
+        docNo_orgCode: { docNo: purchaseReceiptDocNo, orgCode: orgCode },
+      },
+    });
+  }
+};
 
 async function updatePurchaseOrderStatus(
   prisma: Prisma.TransactionClient,

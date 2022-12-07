@@ -56,6 +56,22 @@ export const purchaseReceiptRouter = router({
 
     return { data };
   }),
+  findOpenStatus: protectedProcedure.query(async ({ ctx }) => {
+    const data = await prisma.purchaseReceipt.findMany({
+      where: {
+        orgCode: ctx.user.orgCode,
+      },
+      include: {
+        warehouse: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return { data };
+  }),
+
   find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const data = await prisma.purchaseReceipt.findUnique({
       where: {
@@ -67,10 +83,13 @@ export const purchaseReceiptRouter = router({
       include: {
         warehouse: { select: { name: true } },
         purchaseOrder: {
-          select: { docNo: true, supplier: true, orgCode: true },
+          include: {
+            supplier: true,
+          },
         },
         purchaseReceiptItems: {
           include: {
+            purchaseOrderItem: true,
             product: true,
             packaging: true,
           },
@@ -120,6 +139,7 @@ export const purchaseReceiptRouter = router({
                 },
               },
             },
+
             deliveryNoteNo: purchaseReceipt.deliveryNoteNo,
             purchaseReceiptItems: {
               createMany: {

@@ -154,7 +154,6 @@ export default function PurchaseOrderIndex() {
                           label: "Edit",
                           onClick: () =>
                             router.push(`/purchases/orders/${id}/edit`),
-                          disabled: rowData[2] !== "Open",
                         },
                         {
                           label: "Cancel",

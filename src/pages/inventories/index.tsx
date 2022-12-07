@@ -39,7 +39,9 @@ type ProductPackagingFormValues = z.infer<typeof productPackagingSchema>;
 export default function InventoryIndex() {
   const router = useRouter();
 
-  const [selectedWarehouseCode, setSelectedWarehouseCode] = useState();
+  const [selectedWarehouseCode, setSelectedWarehouseCode] = useState<
+    string | undefined
+  >();
 
   const warehouse = trpc.warehouse.findAll.useQuery({
     warehouseCode: selectedWarehouseCode,

@@ -62,9 +62,7 @@ export const salesOrderRouter = router({
         customer: { select: { name: true } },
         vessel: { select: { name: true } },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
     return { data };

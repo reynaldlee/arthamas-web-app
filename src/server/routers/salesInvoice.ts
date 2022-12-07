@@ -43,6 +43,8 @@ export const salesInvoiceSchema = z.object({
   taxAmount: z.number(),
   taxRate: z.number(),
   taxCode: z.string(),
+  withholdingTaxRate: z.number(),
+  withholdingTaxAmount: z.number(),
   totalBeforeTax: z.number(),
   totalAmount: z.number(),
   memo: z.string().optional().nullable(),
@@ -102,7 +104,11 @@ export const salesInvoiceRouter = router({
         },
       },
       include: {
-        salesOrder: true,
+        salesOrder: {
+          include: {
+            vessel: true,
+          },
+        },
         customer: true,
         salesDelivery: true,
         salesInvoiceItems: {
@@ -209,6 +215,21 @@ export const salesInvoiceRouter = router({
       const { salesInvoiceItems, salesInvoiceServices, ...updatedField } =
         fields;
 
+      const salesInvoice = await prisma.salesInvoice.findUnique({
+        where: {
+          docNo_orgCode: { docNo: input.docNo, orgCode: ctx.user.orgCode },
+        },
+        select: { status: true },
+      });
+
+      if (salesInvoice?.status === "Paid") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Cannot edit this invoice. This invoice has been fully paid.",
+        });
+      }
+
       const data = await prisma.$transaction(async (prisma) => {
         await prisma.salesInvoiceItem.deleteMany({
           where: {
@@ -220,6 +241,7 @@ export const salesInvoiceRouter = router({
         await prisma.salesInvoiceItem.createMany({
           data: salesInvoiceItems.map((item) => ({
             docNo: docNo,
+            orgCode: ctx.user.orgCode,
             ...item,
           })) as any,
         });
@@ -238,8 +260,18 @@ export const salesInvoiceRouter = router({
           })) as any,
         });
 
+        const salesInvoice = await prisma.salesInvoice.findUnique({
+          where: {
+            docNo_orgCode: { docNo: docNo, orgCode: ctx.user.orgCode },
+          },
+          select: { paidAmount: true },
+        });
+
         return await prisma.salesInvoice.update({
-          data: updatedField,
+          data: {
+            ...updatedField,
+            unpaidAmount: updatedField.totalAmount - salesInvoice?.paidAmount!,
+          },
           where: {
             docNo_orgCode: {
               docNo: input.docNo,

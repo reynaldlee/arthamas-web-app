@@ -5,7 +5,6 @@ import { unitSchema } from "./unit";
 import { productGradeSchema } from "./productGrade";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
-import { createProtectedRouter } from "../createRouter";
 import { productCategorySchema } from "./productCategory";
 import { router } from "../trpc";
 

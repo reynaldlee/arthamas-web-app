@@ -29,11 +29,13 @@ export default function TextFieldNumber({
   size,
   disabled,
   required,
+  sx,
   onValueChange,
   readOnly = false,
 }: TextFieldNumberProps) {
   return (
     <NumericFormat
+      sx={sx}
       value={value}
       label={label}
       disabled={disabled}
@@ -47,7 +49,6 @@ export default function TextFieldNumber({
         color: "primary",
       }}
       renderText={(value) => {
-        console.log(formatMoney(parseFloat(value)));
         return formatMoney(parseFloat(value));
       }}
       readOnly={readOnly}

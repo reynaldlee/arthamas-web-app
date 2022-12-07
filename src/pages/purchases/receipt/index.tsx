@@ -21,6 +21,7 @@ import MUIDataTable from "mui-datatables";
 import { formatDate, formatMoney } from "@/utils/format";
 import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
+import StatusBadge from "@/components/Badges/StatusBadge";
 
 export default function PurchaseReceiptIndex() {
   const { data, isLoading } = trpc.purchaseReceipt.findAll.useQuery();
@@ -29,57 +30,6 @@ export default function PurchaseReceiptIndex() {
 
   return (
     <MainLayout>
-      {/* <Box>
-        <Grid container spacing={2}>
-          <Grid item md={4}>
-            <Paper sx={{ p: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item>
-                  <ActiveIcon fontSize="large" />
-                </Grid>
-                <Grid item>
-                  <Typography variant="overline">Active</Typography>
-                  <Box>
-                    <Typography variant="h2">4</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Paper>
-          </Grid>
-          <Grid item md={4}>
-            <Paper sx={{ p: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item>
-                  <DeliveryToday fontSize="large" />
-                </Grid>
-                <Grid item>
-                  <Typography variant="overline">Delivery Today</Typography>
-                  <Box>
-                    <Typography variant="h2">1</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Paper>
-          </Grid>
-
-          <Grid item md={4}>
-            <Paper sx={{ p: 2 }}>
-              <Grid container alignItems="center" spacing={2}>
-                <Grid item>
-                  <DeliveryIn7Days fontSize="large" />
-                </Grid>
-                <Grid item>
-                  <Typography variant="overline">Delivery In 7 days</Typography>
-                  <Box>
-                    <Typography variant="h2">5</Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box> */}
-
       <Box p={2}>
         <Link href="/purchases/receipt/create">
           <Button variant="contained" startIcon={<Add />}>
@@ -124,6 +74,16 @@ export default function PurchaseReceiptIndex() {
               customBodyRender: (purchaseOrder) => purchaseOrder.supplier.name,
             },
           },
+          {
+            label: "Status",
+            name: "status",
+            options: {
+              customBodyRender: (status) => (
+                <StatusBadge status={status}></StatusBadge>
+              ),
+            },
+          },
+
           {
             label: "Warehouse",
             name: "warehouse",

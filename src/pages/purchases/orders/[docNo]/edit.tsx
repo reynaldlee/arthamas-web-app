@@ -51,12 +51,30 @@ export default function PurchaseOrderEdit() {
       },
     });
 
-  const { data, isLoading } = trpc.purchaseOrder.find.useQuery(docNo);
+  const { data } = trpc.purchaseOrder.find.useQuery(docNo);
 
   useEffect(() => {
     if (!data) return;
 
     reset({
+      currencyCode: data.data?.currencyCode,
+      date: data.data?.date,
+      dueDate: data.data?.dueDate,
+      exchangeRate: data.data?.exchangeRate,
+      memo: data.data?.memo,
+      totalProduct: data.data?.totalProduct,
+      totalService: data.data?.totalService,
+      shipTo: data.data?.shipTo,
+      supplierCode: data.data?.supplierCode,
+      taxRate: data.data?.taxRate,
+      taxAmount: data.data?.taxAmount,
+      totalBeforeTax: data.data?.totalBeforeTax,
+      totalAmount: data.data?.totalAmount,
+      warehouseCode: data.data?.warehouseCode,
+      purchaseOrderItems: data.data?.purchaseOrderItems,
+    });
+
+    console.log("asdasd", {
       currencyCode: data.data?.currencyCode,
       date: data.data?.date,
       dueDate: data.data?.dueDate,
@@ -85,19 +103,16 @@ export default function PurchaseOrderEdit() {
 
   const selectedWarehouse = trpc.warehouse.find.useQuery(
     selectedWarehouseCode,
-      {
-          enabled: !!selectedWarehouseCode,
-          trpc: {}
-      }
+    {
+      enabled: !!selectedWarehouseCode,
+      trpc: {},
+    }
   );
 
-  const selectedSupplier = trpc.supplier.find.useQuery(
-    selectedSupplierCode,
-      {
-          enabled: !!selectedSupplierCode,
-          trpc: {}
-      }
-  );
+  const selectedSupplier = trpc.supplier.find.useQuery(selectedSupplierCode, {
+    enabled: !!selectedSupplierCode,
+    trpc: {},
+  });
 
   const updatePurchaseOrder = trpc.purchaseOrder.update.useMutation({
     onError: (err) => {
@@ -232,25 +247,21 @@ export default function PurchaseOrderEdit() {
     calculateProductsAmount();
   };
 
-  console.log(getValues());
-
   return (
     <MainLayout>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3">Create Sales Order</Typography>
+        <Typography variant="h3">Edit Purchase Order</Typography>
+        <Typography variant="h2">{docNo}</Typography>
       </Box>
 
       <Paper sx={{ p: 2 }}>
-        {/* <Box sx={{ py: 2 }}>
-          <PageHeader title="Create Sales Inquiries"></PageHeader>
-        </Box> */}
-
         <Grid container gap={2} sx={{ pt: 2 }}>
           <Grid item md={4} xs={12}>
             <Autocomplete
               options={(supplierList.data?.data || []).map((item) =>
                 pick(item, ["supplierCode", "name"])
               )}
+              disabled={data?.data?.status !== "Open"}
               onChange={(_, value) => {
                 setValue("supplierCode", value.supplierCode, {
                   shouldDirty: true,
@@ -277,6 +288,7 @@ export default function PurchaseOrderEdit() {
                 select
                 fullWidth
                 label="Currency"
+                disabled={data?.data?.status !== "Open"}
                 value={watch("currencyCode")}
                 onChange={(e) => {
                   setValue("currencyCode", e.target.value, {
@@ -420,6 +432,7 @@ export default function PurchaseOrderEdit() {
                           isOptionEqualToValue={(opt, value) =>
                             opt.productCode === value.productCode
                           }
+                          disabled={data?.data?.status !== "Open"}
                           value={pick(
                             productList.data?.data?.find(
                               (item) =>
@@ -452,6 +465,7 @@ export default function PurchaseOrderEdit() {
                           multiline
                           size="small"
                           placeholder="Description"
+                          disabled={data?.data?.status !== "Open"}
                           {...register(`purchaseOrderItems.${index}.desc`)}
                         />
                       </TableCell>
@@ -467,6 +481,7 @@ export default function PurchaseOrderEdit() {
                             size="small"
                             onValueChange={handleProductQtyChange(index)}
                             placeholder="Qty"
+                            disabled={data?.data?.status !== "Open"}
                             value={watch(`purchaseOrderItems.${index}.qty`)}
                           />
                           {/* <Tooltip
@@ -487,6 +502,7 @@ export default function PurchaseOrderEdit() {
                           fullWidth
                           size="small"
                           disableClearable
+                          disabled={data?.data?.status !== "Open"}
                           options={
                             (productList.data?.data || []).find(
                               (item) =>

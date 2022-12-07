@@ -3,44 +3,37 @@ import { TRPCError } from "@trpc/server";
 
 import { generateDocNo } from "../../utils/docNo";
 
-import { serviceSchema } from "./service";
-import { packagingSchema } from "./packaging";
-import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 
 import { router } from "../trpc";
-import { Prisma, SalesInvoiceStatus } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
-export const salesPaymentDetailSchema = z.object({
-  salesInvoiceDocNo: z.string(),
+export const purchasePaymentDetailSchema = z.object({
+  purchaseInvoiceDocNo: z.string(),
   amount: z.number(),
 });
 
-export const salesPaymentSchema = z.object({
+export const purchasePaymentSchema = z.object({
   refNo: z.string(),
   date: z.date(),
   customerCode: z.string(),
   currencyCode: z.string(),
   exchangeRate: z.number(),
-  // taxAmount: z.number(),
-  // taxRate: z.number(),
   paymentMethod: z.string(),
   withholdingTaxRate: z.number(),
   withholdingTaxAmount: z.number(),
   totalBeforeTax: z.number(),
   totalAmount: z.number(),
   memo: z.string().optional().nullable(),
-  salesPaymentDetails: salesPaymentDetailSchema.array(),
+  purchasePaymentDetails: purchasePaymentDetailSchema.array(),
 });
 
-export const salesPaymentRouter = router({
+export const purchasePaymentRouter = router({
   findAll: protectedProcedure.query(async ({ ctx }) => {
-    const data = await prisma.salesPayment.findMany({
+    const data = await prisma.purchasePayment.findMany({
       where: { orgCode: ctx.user.orgCode, deletedAt: null },
-      include: {
-        customer: true,
-      },
+      include: {},
       orderBy: {
         createdAt: "desc",
       },
@@ -50,7 +43,7 @@ export const salesPaymentRouter = router({
   }),
 
   find: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    const data = await prisma.salesPayment.findUnique({
+    const data = await prisma.purchasePayment.findUnique({
       where: {
         docNo_orgCode: {
           docNo: input,
@@ -58,7 +51,7 @@ export const salesPaymentRouter = router({
         },
       },
       include: {
-        salesPaymentDetails: true,
+        purchasePaymentDetails: true,
         customer: true,
       },
     });
@@ -67,13 +60,13 @@ export const salesPaymentRouter = router({
   }),
 
   create: protectedProcedure
-    .input(salesPaymentSchema)
+    .input(purchasePaymentSchema)
     .mutation(async ({ input, ctx }) => {
-      const salesPaymentDetails = input.salesPaymentDetails.filter(
+      const purchasePaymentDetails = input.purchasePaymentDetails.filter(
         (i) => i.amount > 0
       );
 
-      if (salesPaymentDetails.length === 0) {
+      if (purchasePaymentDetails.length === 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Please enter payment amount",
@@ -83,14 +76,14 @@ export const salesPaymentRouter = router({
       const docNo = generateDocNo("SP-");
 
       const data = await prisma.$transaction(async (prisma) => {
-        const data = await prisma.salesPayment.create({
+        const data = await prisma.purchasePayment.create({
           data: {
             docNo: docNo,
             ...input,
-            salesPaymentDetails: {
+            purchasePaymentDetails: {
               createMany: {
-                data: salesPaymentDetails.map((item) => ({
-                  salesInvoiceDocNo: item.salesInvoiceDocNo,
+                data: purchasePaymentDetails.map((item) => ({
+                  purchaseInvoiceDocNo: item.purchaseInvoiceDocNo,
                   amount: item.amount,
                 })),
               },
@@ -101,11 +94,11 @@ export const salesPaymentRouter = router({
           },
         });
       });
-      const updatedInvoiceNos = salesPaymentDetails.map(
-        (i) => i.salesInvoiceDocNo
+      const updatedInvoiceNos = purchasePaymentDetails.map(
+        (i) => i.purchaseInvoiceDocNo
       );
 
-      await updateSalesInvoicesStatus(
+      await updatepurchaseInvoicesStatus(
         prisma,
         updatedInvoiceNos,
         ctx.user.orgCode
@@ -117,44 +110,44 @@ export const salesPaymentRouter = router({
     .input(
       z.object({
         docNo: z.string(),
-        fields: salesPaymentSchema,
+        fields: purchasePaymentSchema,
       })
     )
     .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
-      const { salesPaymentItems, salesPaymentServices, ...updatedField } =
+      const { purchasePaymentItems, purchasePaymentServices, ...updatedField } =
         fields;
 
       const data = await prisma.$transaction(async (prisma) => {
-        await prisma.salesPaymentItem.deleteMany({
+        await prisma.purchasePaymentItem.deleteMany({
           where: {
             docNo: docNo,
             orgCode: ctx.user.orgCode,
           },
         });
 
-        await prisma.salesPaymentItem.createMany({
-          data: salesPaymentItems.map((item) => ({
+        await prisma.purchasePaymentItem.createMany({
+          data: purchasePaymentItems.map((item) => ({
             docNo: docNo,
             ...item,
           })) as any,
         });
 
-        await prisma.salesPaymentService.deleteMany({
+        await prisma.purchasePaymentService.deleteMany({
           where: {
             docNo: docNo,
             orgCode: ctx.user.orgCode,
           },
         });
 
-        await prisma.salesPaymentItem.createMany({
-          data: salesPaymentServices.map((item) => ({
+        await prisma.purchasePaymentItem.createMany({
+          data: purchasePaymentServices.map((item) => ({
             docNo: docNo,
             ...item,
           })) as any,
         });
 
-        return await prisma.salesPayment.update({
+        return await prisma.purchasePayment.update({
           data: updatedField,
           where: {
             docNo_orgCode: {
@@ -172,7 +165,7 @@ export const salesPaymentRouter = router({
     .input(z.string())
     .mutation(async ({ input, ctx }) => {
       const result = await prisma.$transaction(async (prisma) => {
-        const data = await prisma.salesPayment.update({
+        const data = await prisma.purchasePayment.update({
           where: {
             docNo_orgCode: {
               docNo: input,
@@ -185,14 +178,16 @@ export const salesPaymentRouter = router({
           },
         });
 
-        const paymentDetails = await prisma.salesPaymentDetail.findMany({
+        const paymentDetails = await prisma.purchasePaymentDetail.findMany({
           where: {
-            salesPayment: { docNo: input, orgCode: ctx.user.orgCode },
+            purchasePayment: { docNo: input, orgCode: ctx.user.orgCode },
           },
         });
-        const updatedInvoices = paymentDetails.map((i) => i.salesInvoiceDocNo);
+        const updatedInvoices = paymentDetails.map(
+          (i) => i.purchaseInvoiceDocNo
+        );
 
-        await updateSalesInvoicesStatus(
+        await updatepurchaseInvoicesStatus(
           prisma,
           updatedInvoices,
           ctx.user.orgCode
@@ -205,49 +200,50 @@ export const salesPaymentRouter = router({
     }),
 });
 
-export const updateSalesInvoicesStatus = async (
+export const updatepurchaseInvoicesStatus = async (
   prisma: Prisma.TransactionClient,
-  salesInvoiceDocNos: string[],
+  purchaseInvoiceDocNos: string[],
   orgCode: string
 ) => {
-  const salesInvoiceUpdatesPromises = salesInvoiceDocNos.map(
-    async (salesInvoiceDocNo) => {
-      const salesInvoicePayments = await prisma.salesPaymentDetail.aggregate({
-        where: {
-          orgCode: orgCode,
-          salesInvoiceDocNo: salesInvoiceDocNo,
-          salesPayment: { deletedAt: null },
-        },
-        _sum: { amount: true },
-      });
+  const purchaseInvoiceUpdatesPromises = purchaseInvoiceDocNos.map(
+    async (purchaseInvoiceDocNo) => {
+      const purchaseInvoicePayments =
+        await prisma.purchasePaymentDetail.aggregate({
+          where: {
+            orgCode: orgCode,
+            purchaseInvoiceDocNo: purchaseInvoiceDocNo,
+            purchasePayment: { deletedAt: null },
+          },
+          _sum: { amount: true },
+        });
 
-      const salesInvoice = await prisma.salesInvoice.findUnique({
+      const purchaseInvoice = await prisma.purchaseInvoice.findUnique({
         where: {
           docNo_orgCode: {
-            docNo: salesInvoiceDocNo,
+            docNo: purchaseInvoiceDocNo,
             orgCode: orgCode,
           },
         },
       });
 
-      if (!salesInvoice) {
+      if (!purchaseInvoice) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Sales Invoice not found",
+          message: "purchase Invoice not found",
         });
       }
 
-      const paidAmount = salesInvoicePayments._sum.amount || 0;
-      const unpaidAmount = salesInvoice.totalAmount - paidAmount;
-      let status: SalesInvoiceStatus = "Open";
+      const paidAmount = purchaseInvoicePayments._sum.amount || 0;
+      const unpaidAmount = purchaseInvoice.totalAmount - paidAmount;
+      let status: purchaseInvoiceStatus = "Open";
       if (unpaidAmount === 0) {
         status = "Paid";
       }
-      if (paidAmount > 0 && paidAmount < salesInvoice.totalAmount) {
+      if (paidAmount > 0 && paidAmount < purchaseInvoice.totalAmount) {
         status = "Partial";
       }
 
-      return await prisma.salesInvoice.update({
+      return await prisma.purchaseInvoice.update({
         data: {
           paidAmount,
           unpaidAmount,
@@ -256,12 +252,12 @@ export const updateSalesInvoicesStatus = async (
         where: {
           docNo_orgCode: {
             orgCode: orgCode,
-            docNo: salesInvoiceDocNo,
+            docNo: purchaseInvoiceDocNo,
           },
         },
       });
     }
   );
 
-  await Promise.all(salesInvoiceUpdatesPromises);
+  await Promise.all(purchaseInvoiceUpdatesPromises);
 };

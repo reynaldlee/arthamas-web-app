@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import MainLayout from "@/components/Layouts/MainLayout";
 import _ from "lodash";
 import { trpc } from "@/utils/trpc";
 import {
-  Autocomplete,
   Button,
+  Checkbox,
   Divider,
+  FormHelperText,
   Grid,
-  IconButton,
   MenuItem,
   Paper,
   Table,
@@ -26,18 +26,16 @@ import { useRouter } from "next/router";
 
 import { formatDate, formatMoney } from "@/utils/format";
 
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
 import SaveAltOutlinedIcon from "@mui/icons-material/SaveAltOutlined";
 
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { addDays } from "date-fns";
-import { salesInvoiceSchema } from "src/server/routers/salesInvoice";
 import { DatePicker } from "@mui/x-date-pickers";
+import { getWithholdingTaxRate } from "@/utils/tax";
+import { salesPaymentSchema } from "src/server/routers/salesPayment";
 
-type SalesPaymentFormValues = z.infer<typeof salesInvoiceSchema>;
+type SalesPaymentFormValues = z.infer<typeof salesPaymentSchema>;
 
 type QueryParams = {
   salesInvoiceDocNo: string;
@@ -47,31 +45,67 @@ export default function SalesPaymentCreate() {
   const router = useRouter();
   const { salesInvoiceDocNo } = router.query as QueryParams;
 
-  const { register, watch, setValue, handleSubmit, control, reset } =
+  const { register, watch, setValue, handleSubmit, reset, control, getValues } =
     useForm<SalesPaymentFormValues>();
 
-    const salesInvoice = trpc.salesInvoice.find.useQuery(salesInvoiceDocNo, {
-        onSuccess: (data) => {
-            setValue("currencyCode", data.data?.currencyCode!);
-        },
-        trpc: {}
-    });
+  const salesPaymentDetails = useFieldArray({
+    control: control,
+    name: "salesPaymentDetails",
+  });
+
+  const createPayment = trpc.salesPayment.create.useMutation();
+
+  const salesInvoice = trpc.salesInvoice.find.useQuery(salesInvoiceDocNo, {
+    onSuccess: (data) => {
+      reset({
+        currencyCode: data.data?.currencyCode,
+        customerCode: data.data?.customerCode,
+        exchangeRate: data.data?.exchangeRate,
+        totalBeforeTax: data.data?.unpaidAmount,
+        totalAmount: data.data?.unpaidAmount,
+        withholdingTaxAmount: 0,
+        withholdingTaxRate: 0,
+        paymentMethod: "Bank Transfer",
+        date: new Date(),
+      });
+    },
+  });
 
   const selectedCurrencyCode = watch("currencyCode");
-  // const currencyList = trpc.useQuery(["currency.findAll"]);
-  const taxList = trpc.tax.findAll.useQuery();
+
+  const calculateTotalAmount = () => {
+    const totalBeforeTax = _.sumBy(
+      watch(`salesPaymentDetails`),
+      (i) => i.amount || 0
+    );
+    const withholdingTaxAmount =
+      totalBeforeTax * (watch("withholdingTaxRate") || 0);
+    const totalAmount = totalBeforeTax - withholdingTaxAmount;
+    setValue("totalBeforeTax", totalBeforeTax);
+    setValue("withholdingTaxAmount", withholdingTaxAmount);
+    setValue("totalAmount", totalAmount);
+  };
+
   const salesInvoices = trpc.salesInvoice.findAll.useQuery(
     {
-              filters: {
-                currencyCode: watch("currencyCode"),
-                customerCode: salesInvoice.data?.data?.customerCode,
-              },
-            },
-      {
-          enabled:
-              !!salesInvoice.data?.data?.customerCode && !!selectedCurrencyCode,
-          trpc: {}
-      }
+      filters: {
+        currencyCode: selectedCurrencyCode,
+        customerCode: salesInvoice.data?.data?.customerCode,
+      },
+    },
+    {
+      onSuccess: (data) => {
+        data.data.forEach((item, index) => {
+          salesPaymentDetails.insert(index, {
+            amount: item.docNo === salesInvoiceDocNo ? item.unpaidAmount : 0,
+            salesInvoiceDocNo: item.docNo,
+          });
+        });
+        calculateTotalAmount();
+      },
+      enabled:
+        !!salesInvoice.data?.data?.customerCode && !!selectedCurrencyCode,
+    }
   );
 
   const handleCancel = () => {
@@ -84,86 +118,10 @@ export default function SalesPaymentCreate() {
 
   const onSubmit: SubmitHandler<SalesPaymentFormValues> = (data) => {
     createSalesPayment.mutate(data, {
-      onError: (err) => {
-        console.log(err);
-      },
       onSuccess: (err) => {
         router.push("/sales/payments");
       },
     });
-  };
-
-  const handleProductQtyChange = (index: number) => (value: number) => {
-    //   const unitQty = watch(`salesOrderItems.${index}.unitQty`);
-    //   setValue(`salesOrderItems.${index}.qty`, value);
-    //   setValue(`salesOrderItems.${index}.totalUnitQty`, value * unitQty);
-    //   calculateProductAmount(index);
-    // };
-    // const calculateProductsAmount = () => {
-    //   salesOrderItems.fields.forEach((_, index) => {
-    //     calculateProductAmount(index);
-    //   });
-  };
-
-  const calculateServicesAmount = () => {
-    // salesInvoiceService.fields.forEach((_, index) => {
-    //   calculateServiceAmount(index);
-    // });
-    // calculateServiceSubtotal();
-  };
-
-  const calculateServiceSubtotal = () => {
-    // const servicesSubtotal = _.sumBy(
-    //   watch("salesInvoiceService"),
-    //   (o) => o.amount
-    // );
-    // setValue("totalService", servicesSubtotal);
-    // calculateTotalAmount();
-  };
-
-  const calculateProductSubtotal = () => {
-    // const productSubtotal = _.sumBy(
-    //   watch("salesInvoiceItems"),
-    //   (o) => o.amount
-    // );
-    // setValue("totalProduct", productSubtotal);
-    // calculateTotalAmount();
-  };
-
-  const calculateTotalAmount = () => {
-    // const totalProduct = watch("totalProduct") || 0;
-    // const totalService = watch("totalService") || 0;
-    // const taxRate = watch("taxRate") || 0;
-    // const totalBeforeTax = totalProduct + totalService;
-    // const taxAmount = totalBeforeTax * taxRate;
-    // setValue("totalBeforeTax", totalBeforeTax);
-    // setValue("taxAmount", taxAmount);
-    // setValue("totalAmount", totalProduct + totalService + taxAmount);
-  };
-
-  const calculateProductAmount = (index: number) => {
-    // const totalUnitQty = watch(`salesInvoiceItems.${index}.totalUnitQty`);
-    // const unitPrice = watch(`salesInvoiceItems.${index}.unitPrice`);
-    // const exchangeRate = watch("exchangeRate");
-    // setValue(
-    //   `salesInvoiceItems.${index}.amount`,
-    //   totalUnitQty * unitPrice * exchangeRate
-    // );
-    // calculateProductSubtotal();
-  };
-
-  const calculateServiceAmount = (index: number) => {
-    // const unitPrice = watch(`salesInvoiceServices.${index}.unitPrice`);
-    // const exchangeRate = watch("exchangeRate");
-    // // setValue(`salesInvoiceService.${index}.amount`, unitPrice * exchangeRate);
-    // calculateServiceSubtotal();
-  };
-
-  const calculateTotalUnitQty = (index: number) => {
-    // const qty = watch(`salesOrderItems.${index}.qty`);
-    // const unitQty = watch(`salesOrderItems.${index}.unitQty`);
-    // setValue(`salesOrderItems.${index}.totalUnitQty`, qty * unitQty);
-    // calculateProductsAmount();
   };
 
   return (
@@ -176,27 +134,36 @@ export default function SalesPaymentCreate() {
         <Grid container gap={2} sx={{ pt: 2 }}>
           <Grid item md={4} xs={12}>
             <TextField
-              value={salesInvoice.data?.data.customer.name!}
+              value={salesInvoice.data?.data?.customer.name!}
               disabled
               fullWidth
               InputLabelProps={{
                 shrink: true,
               }}
               label={"Customer"}
-              disableClearable
             />
           </Grid>
 
           <Grid item md={2} xs={6}>
             <TextField
-              value={watch("currencyCode")}
+              value={selectedCurrencyCode}
+              InputLabelProps={{
+                shrink: true,
+              }}
+              disabled
+              fullWidth
+              label="Currency"
+            />
+          </Grid>
+          <Grid item md={2} xs={6}>
+            <TextField
+              value={watch("exchangeRate")}
               disabled
               InputLabelProps={{
                 shrink: true,
               }}
               fullWidth
-              label="Currency"
-              disableClearable
+              label="Exchange Rate"
             />
           </Grid>
         </Grid>
@@ -209,11 +176,13 @@ export default function SalesPaymentCreate() {
               <DatePicker
                 label="Payment Date"
                 onChange={(value) => {
-                  setValue("date", value);
+                  setValue("date", value!);
                 }}
                 value={watch("date")}
-                renderInput={(params) => <TextField {...params} fullWidth />}
-              ></DatePicker>
+                renderInput={(params) => (
+                  <TextField {...params} fullWidth required />
+                )}
+              />
             </Grid>
             <Grid item md={4} xs={12}>
               <TextField
@@ -221,6 +190,11 @@ export default function SalesPaymentCreate() {
                 InputLabelProps={{
                   shrink: true,
                 }}
+                value={watch("paymentMethod") || ""}
+                onChange={(e) => {
+                  setValue("paymentMethod", e.target.value);
+                }}
+                required
                 fullWidth
                 label="Payment Method"
               >
@@ -231,7 +205,15 @@ export default function SalesPaymentCreate() {
           </Grid>
           <Grid container gap={2} sx={{ pt: 2 }}>
             <Grid item md={4} xs={12}>
-              <TextField label="Payment Ref. No"></TextField>
+              <TextField
+                label="Payment Ref. No"
+                value={watch("refNo")}
+                onChange={(e) => {
+                  setValue("refNo", e.target.value);
+                }}
+                fullWidth
+                required
+              ></TextField>
             </Grid>
             <Grid item md={4} xs={12}>
               {/* <Autocomplete
@@ -266,11 +248,11 @@ export default function SalesPaymentCreate() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Invoice No</TableCell>
-                    <TableCell>Description</TableCell>
                     <TableCell>Due Date</TableCell>
-                    <TableCell>Total</TableCell>
-                    <TableCell>Balance</TableCell>
-                    <TableCell>Payment Amount</TableCell>
+                    <TableCell align="center">Currency</TableCell>
+                    <TableCell align="right">Invoice Amount</TableCell>
+                    <TableCell align="right">Unpaid</TableCell>
+                    <TableCell align="right">Payment Amount</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -280,61 +262,43 @@ export default function SalesPaymentCreate() {
                         <Typography variant="h5">{item.docNo}</Typography>
                       </TableCell>
 
-                      <TableCell padding="none">
-                        <Box
-                          display="flex"
-                          flexDirection={"row"}
-                          alignItems={"center"}
-                        >
-                          <Typography variant="h5">{item.memo}</Typography>
-                        </Box>
-                      </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Typography variant="h5">
                           {formatDate(item.dueDate)}
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ padding: 0.5 }}>
+                      <TableCell align="center" sx={{ padding: 0.5 }}>
+                        <Typography variant="h5">
+                          {item.currencyCode}
+                        </Typography>
+                      </TableCell>
+
+                      <TableCell sx={{ padding: 0.5 }} align="right">
                         <Typography variant="h5">
                           {formatMoney(item.totalAmount)}
                         </Typography>
                       </TableCell>
 
-                      <TableCell sx={{ padding: 0.5 }}>
+                      <TableCell sx={{ padding: 0.5 }} align="right">
                         <Typography variant="h5">
                           {formatMoney(item.unpaidAmount)}
                         </Typography>
                       </TableCell>
-                      <TableCell sx={{ padding: 0.5 }}>
+                      <TableCell sx={{ padding: 0.5 }} align="right">
                         <TextFieldNumber
                           placeholder="Payment Amount"
-                          value={
-                            item.docNo === salesInvoiceDocNo
-                              ? item.unpaidAmount
-                              : 0
-                          }
+                          onValueChange={(value) => {
+                            setValue(
+                              `salesPaymentDetails.${index}.amount`,
+                              value
+                            );
+                            calculateTotalAmount();
+                          }}
+                          value={watch(`salesPaymentDetails.${index}.amount`)}
                         ></TextFieldNumber>
                       </TableCell>
-                      <TableCell sx={{ padding: 0.5 }}>
-                        {/* <TextFieldNumber
-                          fullWidth
-                          size="small"
-                          disabled
-                          // onValueChange={handleProductQtyChange(index)}
-                          placeholder="Qty"
-                          value={watch(`salesInvoiceItems.${index}.amount`)}
-                        /> */}
-                      </TableCell>
-                      {/* <TableCell sx={{ padding: 0.5 }}>
-                          <IconButton
-                            onClick={() => handleRemoveProduct(index)}
-                            color="error"
-                            size="medium"
-                          >
-                            <DeleteIcon fontSize="small"></DeleteIcon>
-                          </IconButton>
-                        </TableCell> */}
+                      <TableCell sx={{ padding: 0.5 }}></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -376,28 +340,23 @@ export default function SalesPaymentCreate() {
                 alignItems="center"
               >
                 <Box display="flex" flexDirection={"row"} alignItems="center">
-                  <Typography variant="h6">Withholding Tax</Typography>
+                  <Typography variant="h6">PPH 22 (0.3%)</Typography>
 
-                  <Autocomplete
-                    sx={{ ml: 4, width: 200 }}
-                    size="small"
-                    options={taxList.data?.data || []}
-                    onChange={(_, value) => {
-                      setValue("taxCode", value.taxCode);
-                      setValue("taxRate", value.taxRate);
+                  <Checkbox
+                    checked={!!watch("withholdingTaxRate")}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+
+                      setValue(
+                        "withholdingTaxRate",
+                        checked ? getWithholdingTaxRate() : 0
+                      );
+                      calculateTotalAmount();
                     }}
-                    disableClearable
-                    getOptionLabel={(option) => option.name}
-                    isOptionEqualToValue={(opt, value) =>
-                      opt.taxCode === value.taxCode
-                    }
-                    renderInput={(params) => (
-                      <TextField {...params} label="Witholding Tax" />
-                    )}
-                  />
+                  ></Checkbox>
                 </Box>
                 <Typography variant="h6">
-                  {formatMoney(watch("taxAmount"))}
+                  {formatMoney(watch("withholdingTaxAmount"))}
                 </Typography>
               </Box>
 
@@ -408,70 +367,14 @@ export default function SalesPaymentCreate() {
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Typography variant="h4">Balance Due</Typography>
+                <Typography variant="h4">Total Payment</Typography>
                 <Typography variant="h4">
                   {formatMoney(watch("totalAmount"))}
                 </Typography>
               </Box>
             </Grid>
           </Grid>
-          <Grid container>
-            {/* <Grid item md={5} xs={12}>
-              <UploadBox>
-                <TypographyPrimary variant="h4" gutterBottom>
-                  Upload Files
-                </TypographyPrimary>
-                <TypographySecondary variant="body1">
-                  Add files as attachment
-                </TypographySecondary>
-
-                <BoxUploadWrapper {...getRootProps()}>
-                  <input {...getInputProps()} />
-                  {isDragAccept && (
-                    <>
-                      <AvatarSuccess variant="rounded">
-                        <CheckTwoToneIcon />
-                      </AvatarSuccess>
-                      <TypographyPrimary sx={{ mt: 2 }}>
-                        Drop the files to start uploading
-                      </TypographyPrimary>
-                    </>
-                  )}
-                  {isDragReject && (
-                    <>
-                      <AvatarDanger variant="rounded">
-                        <CloseTwoToneIcon />
-                      </AvatarDanger>
-                      <TypographyPrimary sx={{ mt: 2 }}>
-                        You cannot upload these file types
-                      </TypographyPrimary>
-                    </>
-                  )}
-                  {!isDragActive && (
-                    <>
-                      <AvatarWrapper variant="rounded">
-                        <CloudUploadTwoToneIcon />
-                      </AvatarWrapper>
-                      <TypographyPrimary sx={{ mt: 2 }}>
-                        Drag & drop files here
-                      </TypographyPrimary>
-                    </>
-                  )}
-                </BoxUploadWrapper>
-                {files.length > 0 && (
-                  <>
-                    <Alert sx={{ py: 0, mt: 2 }} severity="success">
-                      You have uploaded <b>{files.length}</b> files!
-                    </Alert>
-                    <DividerContrast sx={{ mt: 2 }} />
-                    <List disablePadding component="div">
-                      {files}
-                    </List>
-                  </>
-                )}
-              </UploadBox> 
-            </Grid>*/}
-          </Grid>
+          <Grid container></Grid>
           <Grid
             container
             spacing={2}
@@ -483,7 +386,7 @@ export default function SalesPaymentCreate() {
                 variant="contained"
                 color="error"
                 onClick={handleCancel}
-                disabled={createSalesPayment.isLoading}
+                disabled={createPayment.isLoading}
               >
                 Cancel
               </Button>
@@ -491,7 +394,7 @@ export default function SalesPaymentCreate() {
             <Grid item>
               <Button
                 variant="contained"
-                disabled={createSalesPayment.isLoading}
+                disabled={createPayment.isLoading}
                 startIcon={<SaveAltOutlinedIcon />}
                 onClick={handleSubmit(onSubmit)}
               >
@@ -501,6 +404,8 @@ export default function SalesPaymentCreate() {
           </Grid>
         </>
       ) : null}
+
+      <FormHelperText error>{createSalesPayment.error?.message}</FormHelperText>
     </MainLayout>
   );
 }
