@@ -50,12 +50,18 @@ export default function SalesOrderCreate() {
   const { salesQuoteDocNo } = router.query as QueryParams;
 
   const { register, watch, setValue, handleSubmit, control, reset } =
-    useForm<SalesOrderFormValues>();
-
-    const salesQuote = trpc.salesQuote.find.useQuery(salesQuoteDocNo!, {
-        enabled: !!salesQuoteDocNo,
-        trpc: {}
+    useForm<SalesOrderFormValues>({
+      defaultValues: {
+        date: new Date(),
+        dueDate: new Date(),
+        poDate: new Date(),
+      },
     });
+
+  const salesQuote = trpc.salesQuote.find.useQuery(salesQuoteDocNo!, {
+    enabled: !!salesQuoteDocNo,
+    trpc: {},
+  });
 
   const customerList = trpc.customer.findAll.useQuery();
   const currencyList = trpc.currency.findAll.useQuery();
@@ -70,10 +76,10 @@ export default function SalesOrderCreate() {
 
   const productList = trpc.product.findByVesselAndPort.useQuery(
     { vesselCode: selectedVesselCode, portCode: selectedPortCode },
-      {
-          enabled: !!selectedVesselCode,
-          trpc: {}
-      }
+    {
+      enabled: !!selectedVesselCode,
+      trpc: {},
+    }
   );
 
   const createSalesOrder = trpc.salesOrder.create.useMutation({
@@ -136,13 +142,10 @@ export default function SalesOrderCreate() {
   // const [salesOrderItems, setSalesOrderItems] = useState([]);
   // const [salesOrderServices, setSalesOrderServices] = useState([]);
 
-  const selectedCustomer = trpc.customer.find.useQuery(
-    selectedCustomerCode,
-      {
-          enabled: !!selectedCustomerCode,
-          trpc: {}
-      }
-  );
+  const selectedCustomer = trpc.customer.find.useQuery(selectedCustomerCode, {
+    enabled: !!selectedCustomerCode,
+    trpc: {},
+  });
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to exit?")) {

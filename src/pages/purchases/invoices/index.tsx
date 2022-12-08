@@ -89,6 +89,13 @@ export default function PurchaseInvoiceIndex() {
             },
           },
           {
+            label: "Unpaid",
+            name: "unpaidAmount",
+            options: {
+              customBodyRender: formatMoney,
+            },
+          },
+          {
             name: "docNo",
             label: "Action",
             options: {

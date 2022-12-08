@@ -1,12 +1,19 @@
+import { trpc } from "@/utils/trpc";
 import { Button, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import QRCode from "react-qr-code";
 
+type QueryParams = {
+  docNo: string;
+};
+
 export default function PrintBarcode() {
   const router = useRouter();
-  const { docNo } = router.query;
+  const { docNo } = router.query as QueryParams;
+
+  const purchaseReceipt = trpc.purchaseReceipt.find.useQuery(docNo);
 
   return (
     <>
@@ -50,30 +57,36 @@ export default function PrintBarcode() {
       </Button>
 
       {/* <Box sx={{ maxHeight: "100vw", overflow: "scroll" }}> */}
-      {[1, 2, 3, 4, 5, 6, 7, 8].map((item) => {
-        return (
-          <section
-            key={item}
-            style={{
-              display: "flex",
-              flex: 1,
-              flexDirection: "column",
-              alignItems: "center",
-              marginTop: 30,
-            }}
-          >
-            <Typography variant="h1" sx={{ marginBottom: 2 }}>
-              Test
-            </Typography>
-            <QRCode
-              value={`TI4020DR HASHD1923 ${item.toString().padStart(4, "0")}`}
-              size={100}
-            />
-            <Typography variant="h2" sx={{ marginTop: 2 }}>
-              {`TI4020DR HASHD1923 ${item.toString().padStart(4, "0")}`}
-            </Typography>
-          </section>
-        );
+      {(purchaseReceipt.data?.data.purchaseReceiptItems || []).map((item) => {
+        console.log(new Array(10));
+
+        return new Array(item.qty).fill(0, 0, item.qty).map((_item, _index) => {
+          const runningNo = (_index + 1).toString().padStart(4, "0");
+
+          return (
+            <section
+              key={item.batchNo + runningNo}
+              style={{
+                display: "flex",
+                flex: 1,
+                flexDirection: "column",
+                alignItems: "center",
+                marginTop: 30,
+              }}
+            >
+              <Typography variant="h1" sx={{ marginBottom: 2 }}>
+                {item.product.name}
+              </Typography>
+              <QRCode
+                value={`${item.productCode} ${item.packagingCode} ${item.batchNo} ${runningNo}`}
+                size={100}
+              />
+              <Typography variant="h2" sx={{ marginTop: 2 }}>
+                {`${item.productCode} ${item.packagingCode} ${item.batchNo} ${runningNo}`}
+              </Typography>
+            </section>
+          );
+        });
       })}
       {/* </Box> */}
     </>

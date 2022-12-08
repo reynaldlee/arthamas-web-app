@@ -36,7 +36,7 @@ export default function SalesDeliveryIndex() {
 
   return (
     <MainLayout>
-      <Box sx={{ mb: 2 }}>
+      {/* <Box sx={{ mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item md={4}>
             <Paper sx={{ p: 2 }}>
@@ -70,7 +70,7 @@ export default function SalesDeliveryIndex() {
             </Paper>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
       <MUIDataTable
         title="List Delivery"

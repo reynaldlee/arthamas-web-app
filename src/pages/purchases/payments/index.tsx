@@ -24,16 +24,28 @@ import MoreMenu from "@/components/Menu/MoreMenu";
 import { useRouter } from "next/router";
 
 export default function PurchasePaymentIndex() {
-  const { data, isLoading } = trpc.salesPayment.findAll.useQuery();
+  const { data, isLoading } = trpc.purchasePayment.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
-  const { mutate: cancelInvoice } = trpc.salesInvoice.cancel.useMutation();
+  const { mutate: deletePayment } = trpc.purchasePayment.delete.useMutation({
+    onSuccess: () => {
+      router.push("/purchases/payments");
+    },
+  });
 
   return (
     <MainLayout>
+      <Link href="/purchases/payments/create">
+        <a>
+          <Button variant="contained" sx={{ my: 2 }}>
+            Create Purchase Payment
+          </Button>
+        </a>
+      </Link>
+
       <MUIDataTable
-        title="Sales Payments"
+        title="Purchase Payments"
         options={{
           tableId: tableId,
           selectableRowsHideCheckboxes: true,
@@ -49,22 +61,21 @@ export default function PurchasePaymentIndex() {
             },
           },
           {
-            label: "Customer",
-            name: "customer",
+            label: "Supplier",
+            name: "supplier",
             options: {
-              customBodyRender: (customer) => customer.name,
+              customBodyRender: (supplier) => supplier.name,
             },
           },
-          {
-            label: "Status",
-            name: "status",
-            options: {
-              customBodyRender: (status) => (
-                <StatusBadge status={status}></StatusBadge>
-              ),
-            },
-          },
-
+          // {
+          //   label: "PPH",
+          //   name: "status",
+          //   options: {
+          //     customBodyRender: (status) => (
+          //       <StatusBadge status={status}></StatusBadge>
+          //     ),
+          //   },
+          // },
           {
             label: "Currency",
             name: "currencyCode",
@@ -89,22 +100,22 @@ export default function PurchasePaymentIndex() {
                         {
                           label: "Edit",
                           onClick: () =>
-                            router.push(`/sales/invoices/${id}/edit`),
+                            router.push(`/purchases/payments/${id}/edit`),
                         },
+                        // {
+                        //   label: "Print Invoice",
+                        //   onClick: () =>
+                        //     router.push(`/sales/invoices/${id}/print`),
+                        // },
+                        // {
+                        //   label: "Create Payment",
+                        //   onClick: () =>
+                        //     router.push(
+                        //       `/sales/payments/create?salesDeliveryDocNo=${id}`
+                        //     ),
+                        // },
                         {
-                          label: "Print Invoice",
-                          onClick: () =>
-                            router.push(`/sales/invoices/${id}/print`),
-                        },
-                        {
-                          label: "Create Payment",
-                          onClick: () =>
-                            router.push(
-                              `/sales/payments/create?salesDeliveryDocNo=${id}`
-                            ),
-                        },
-                        {
-                          label: "Cancel",
+                          label: "Delete Payment",
                           danger: true,
                           onClick: () => {
                             if (
@@ -112,7 +123,7 @@ export default function PurchasePaymentIndex() {
                                 `Are you sure you want to cancel ${id}`
                               )
                             ) {
-                              cancelOrder(id);
+                              deletePayment(id);
                               router.reload();
                             }
                           },

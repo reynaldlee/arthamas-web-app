@@ -5,6 +5,7 @@ import { trpc } from "@/utils/trpc";
 import {
   Autocomplete,
   Button,
+  Checkbox,
   Divider,
   Grid,
   IconButton,
@@ -26,51 +27,67 @@ import { useRouter } from "next/router";
 
 import { formatDate, formatMoney } from "@/utils/format";
 
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
 import SaveAltOutlinedIcon from "@mui/icons-material/SaveAltOutlined";
 
 import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { addDays } from "date-fns";
-import { salesInvoiceSchema } from "src/server/routers/salesInvoice";
 import { DatePicker } from "@mui/x-date-pickers";
+import { purchasePaymentSchema } from "src/server/routers/purchasePayment";
+import { getWithholdingTaxRate } from "@/utils/tax";
 
-type SalesPaymentFormValues = z.infer<typeof salesInvoiceSchema>;
+type PurchasePaymentFormValues = z.infer<typeof purchasePaymentSchema>;
 
 type QueryParams = {
-  salesInvoiceDocNo: string;
+  purchaseInvoiceDocNo: string;
 };
 
 export default function PurchasePaymentCreate() {
   const router = useRouter();
-  const { salesInvoiceDocNo } = router.query as QueryParams;
+  const { purchaseInvoiceDocNo } = router.query as QueryParams;
 
-  const { register, watch, setValue, handleSubmit } =
-    useForm<SalesPaymentFormValues>();
+  const { register, watch, setValue, handleSubmit, control, reset } =
+    useForm<PurchasePaymentFormValues>({
+      defaultValues: {
+        exchangeRate: 1,
+        date: new Date(),
+        withholdingTaxRate: 0,
+      },
+    });
 
-  const salesInvoice = trpc.salesInvoice.find.useQuery(salesInvoiceDocNo, {
-    onSuccess: (data) => {
-      setValue("currencyCode", data.data?.currencyCode!);
-    },
-    trpc: {},
+  const purchasePaymentDetails = useFieldArray({
+    control: control,
+    name: "purchasePaymentDetails",
   });
 
+  // const salesInvoice = trpc.purchaseInvoice.find.useQuery(salesInvoiceDocNo, {
+  //   onSuccess: (data) => {
+  //     setValue("currencyCode", data.data?.currencyCode!);
+  //   },
+  //   trpc: {},
+  // });
+
+  const currencyList = trpc.currency.findAll.useQuery();
+  const supplierList = trpc.supplier.findAll.useQuery();
+  // const taxList = trpc.tax.findAll.useQuery();
   const selectedCurrencyCode = watch("currencyCode");
-  // const currencyList = trpc.useQuery(["currency.findAll"]);
-  const taxList = trpc.tax.findAll.useQuery();
-  const salesInvoices = trpc.salesInvoice.findAll.useQuery(
+  const createPurchasePayment = trpc.purchasePayment.create.useMutation();
+
+  const purchaseInvoices = trpc.purchaseInvoice.findOpenStatus.useQuery(
     {
-      filters: {
-        currencyCode: watch("currencyCode"),
-        customerCode: salesInvoice.data?.data?.customerCode,
-      },
+      supplierCode: watch("supplierCode"),
     },
     {
-      enabled:
-        !!salesInvoice.data?.data?.customerCode && !!selectedCurrencyCode,
-      trpc: {},
+      enabled: !!watch("supplierCode") && !!selectedCurrencyCode,
+      onSuccess: (invs) => {
+        purchasePaymentDetails.replace(
+          invs.data.map((item) => ({
+            purchaseInvoiceDocNo: item.docNo,
+            amount: 0,
+          }))
+        );
+        calculateTotalAmount();
+      },
     }
   );
 
@@ -80,181 +97,118 @@ export default function PurchasePaymentCreate() {
     }
   };
 
-  const createSalesPayment = trpc.salesPayment.create.useMutation();
-
-  const onSubmit: SubmitHandler<SalesPaymentFormValues> = (data) => {
-    createSalesPayment.mutate(data, {
+  const onSubmit: SubmitHandler<PurchasePaymentFormValues> = (data) => {
+    createPurchasePayment.mutate(data, {
       onError: (err) => {
         console.log(err);
       },
       onSuccess: (err) => {
-        router.push("/sales/payments");
+        router.push("/purchases/payments");
       },
     });
   };
 
-  const handleProductQtyChange = (index: number) => (value: number) => {
-    //   const unitQty = watch(`salesOrderItems.${index}.unitQty`);
-    //   setValue(`salesOrderItems.${index}.qty`, value);
-    //   setValue(`salesOrderItems.${index}.totalUnitQty`, value * unitQty);
-    //   calculateProductAmount(index);
-    // };
-    // const calculateProductsAmount = () => {
-    //   salesOrderItems.fields.forEach((_, index) => {
-    //     calculateProductAmount(index);
-    //   });
-  };
-
-  const calculateServicesAmount = () => {
-    // salesInvoiceService.fields.forEach((_, index) => {
-    //   calculateServiceAmount(index);
-    // });
-    // calculateServiceSubtotal();
-  };
-
-  const calculateServiceSubtotal = () => {
-    // const servicesSubtotal = _.sumBy(
-    //   watch("salesInvoiceService"),
-    //   (o) => o.amount
-    // );
-    // setValue("totalService", servicesSubtotal);
-    // calculateTotalAmount();
-  };
-
-  const calculateProductSubtotal = () => {
-    // const productSubtotal = _.sumBy(
-    //   watch("salesInvoiceItems"),
-    //   (o) => o.amount
-    // );
-    // setValue("totalProduct", productSubtotal);
-    // calculateTotalAmount();
-  };
-
   const calculateTotalAmount = () => {
-    // const totalProduct = watch("totalProduct") || 0;
-    // const totalService = watch("totalService") || 0;
-    // const taxRate = watch("taxRate") || 0;
-    // const totalBeforeTax = totalProduct + totalService;
-    // const taxAmount = totalBeforeTax * taxRate;
-    // setValue("totalBeforeTax", totalBeforeTax);
-    // setValue("taxAmount", taxAmount);
-    // setValue("totalAmount", totalProduct + totalService + taxAmount);
-  };
-
-  const calculateProductAmount = (index: number) => {
-    // const totalUnitQty = watch(`salesInvoiceItems.${index}.totalUnitQty`);
-    // const unitPrice = watch(`salesInvoiceItems.${index}.unitPrice`);
-    // const exchangeRate = watch("exchangeRate");
-    // setValue(
-    //   `salesInvoiceItems.${index}.amount`,
-    //   totalUnitQty * unitPrice * exchangeRate
-    // );
-    // calculateProductSubtotal();
-  };
-
-  const calculateServiceAmount = (index: number) => {
-    // const unitPrice = watch(`salesInvoiceServices.${index}.unitPrice`);
-    // const exchangeRate = watch("exchangeRate");
-    // // setValue(`salesInvoiceService.${index}.amount`, unitPrice * exchangeRate);
-    // calculateServiceSubtotal();
-  };
-
-  const calculateTotalUnitQty = (index: number) => {
-    // const qty = watch(`salesOrderItems.${index}.qty`);
-    // const unitQty = watch(`salesOrderItems.${index}.unitQty`);
-    // setValue(`salesOrderItems.${index}.totalUnitQty`, qty * unitQty);
-    // calculateProductsAmount();
+    const totalBeforeTax = _.sumBy(
+      watch(`purchasePaymentDetails`),
+      (i) => i.amount || 0
+    );
+    const withholdingTaxAmount =
+      totalBeforeTax * (watch("withholdingTaxRate") || 0);
+    const totalAmount = totalBeforeTax - withholdingTaxAmount;
+    setValue("totalBeforeTax", totalBeforeTax);
+    setValue("withholdingTaxAmount", withholdingTaxAmount);
+    setValue("totalAmount", totalAmount);
   };
 
   return (
     <MainLayout>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3">Sales Payment</Typography>
+        <Typography variant="h3">Purchase Payment</Typography>
       </Box>
 
       <Paper sx={{ p: 2 }}>
         <Grid container gap={2} sx={{ pt: 2 }}>
           <Grid item md={4} xs={12}>
-            <TextField
-              value={salesInvoice.data?.data.customer.name!}
-              disabled
-              fullWidth
-              InputLabelProps={{
-                shrink: true,
+            <Autocomplete
+              options={supplierList.data?.data || []}
+              getOptionLabel={(option) => option.name}
+              onChange={(_, value) => {
+                setValue("supplierCode", value.supplierCode, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                  shouldTouch: true,
+                });
               }}
-              label={"Customer"}
+              isOptionEqualToValue={(opt, value) =>
+                opt.supplierCode === value.supplierCode
+              }
               disableClearable
+              renderInput={(params) => (
+                <TextField {...params} label="Supplier" />
+              )}
             />
           </Grid>
 
           <Grid item md={2} xs={6}>
-            <TextField
-              value={watch("currencyCode")}
-              disabled
-              InputLabelProps={{
-                shrink: true,
+            <Autocomplete
+              options={currencyList.data?.data || []}
+              getOptionLabel={(option) => option.name}
+              onChange={(_, value) => {
+                setValue("currencyCode", value.currencyCode, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                  shouldTouch: true,
+                });
               }}
-              fullWidth
-              label="Currency"
+              isOptionEqualToValue={(opt, value) =>
+                opt.currencyCode === value.currencyCode
+              }
               disableClearable
+              renderInput={(params) => (
+                <TextField {...params} label="Currency" />
+              )}
             />
+          </Grid>
+
+          <Grid item md={2} xs={6}>
+            <TextFieldNumber
+              label="Exchange Rate"
+              value={watch("exchangeRate")}
+              onValueChange={(value) => {
+                setValue("exchangeRate", value);
+              }}
+            ></TextFieldNumber>
           </Grid>
         </Grid>
       </Paper>
 
-      {salesInvoices.data ? (
+      {purchaseInvoices.data ? (
         <>
           <Grid container gap={2} sx={{ pt: 3 }}>
             <Grid item md={4} xs={12}>
               <DatePicker
                 label="Payment Date"
                 onChange={(value) => {
-                  setValue("date", value);
+                  setValue("date", value!);
                 }}
                 value={watch("date")}
                 renderInput={(params) => <TextField {...params} fullWidth />}
               ></DatePicker>
             </Grid>
-            <Grid item md={4} xs={12}>
-              <TextField
-                select
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                fullWidth
-                label="Payment Method"
-              >
-                <MenuItem value="Bank Transfer">Bank Transfer</MenuItem>
-                <MenuItem value="Cash">Cash</MenuItem>
-              </TextField>
-            </Grid>
           </Grid>
           <Grid container gap={2} sx={{ pt: 2 }}>
             <Grid item md={4} xs={12}>
-              <TextField label="Payment Ref. No"></TextField>
-            </Grid>
-            <Grid item md={4} xs={12}>
-              {/* <Autocomplete
-                disableClearable
-                options={(selectedCustomer.data?.data?.vessels || []).map(
-                  (item) => pick(item, ["vesselCode", "name"])
-                )}
-                onChange={(_, value) => {
-                  setValue("vesselCode", value.vesselCode, {
-                    shouldDirty: true,
-                    shouldTouch: true,
-                    shouldValidate: true,
-                  });
+              <TextField
+                label="Payment Ref. No"
+                value={watch("refNo")}
+                required
+                onChange={(e) => {
+                  setValue("refNo", e.target.value);
                 }}
-                getOptionLabel={(option) => option.name}
-                isOptionEqualToValue={(opt, value) =>
-                  opt.vesselCode === value.vesselCode
-                }
-                renderInput={(params) => (
-                  <TextField {...params} label="Vessel" />
-                )}
-              /> */}
+              ></TextField>
             </Grid>
+            <Grid item md={4} xs={12}></Grid>
           </Grid>
 
           <Grid container>
@@ -266,29 +220,19 @@ export default function PurchasePaymentCreate() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Invoice No</TableCell>
-                    <TableCell>Description</TableCell>
                     <TableCell>Due Date</TableCell>
-                    <TableCell>Total</TableCell>
-                    <TableCell>Balance</TableCell>
+                    <TableCell>Total Invoice</TableCell>
+                    <TableCell>Unpaid</TableCell>
                     <TableCell>Payment Amount</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(salesInvoices.data?.data || []).map((item, index) => (
+                  {(purchaseInvoices.data?.data || []).map((item, index) => (
                     <TableRow key={index}>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Typography variant="h5">{item.docNo}</Typography>
                       </TableCell>
 
-                      <TableCell padding="none">
-                        <Box
-                          display="flex"
-                          flexDirection={"row"}
-                          alignItems={"center"}
-                        >
-                          <Typography variant="h5">{item.memo}</Typography>
-                        </Box>
-                      </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
                         <Typography variant="h5">
                           {formatDate(item.dueDate)}
@@ -309,11 +253,16 @@ export default function PurchasePaymentCreate() {
                       <TableCell sx={{ padding: 0.5 }}>
                         <TextFieldNumber
                           placeholder="Payment Amount"
-                          value={
-                            item.docNo === salesInvoiceDocNo
-                              ? item.unpaidAmount
-                              : 0
-                          }
+                          onValueChange={(value) => {
+                            setValue(
+                              `purchasePaymentDetails.${index}.amount`,
+                              value
+                            );
+                            calculateTotalAmount();
+                          }}
+                          value={watch(
+                            `purchasePaymentDetails.${index}.amount`
+                          )}
                         ></TextFieldNumber>
                       </TableCell>
                       <TableCell sx={{ padding: 0.5 }}>
@@ -376,28 +325,23 @@ export default function PurchasePaymentCreate() {
                 alignItems="center"
               >
                 <Box display="flex" flexDirection={"row"} alignItems="center">
-                  <Typography variant="h6">Withholding Tax</Typography>
+                  <Typography variant="h6">PPH 22 (0.3%)</Typography>
 
-                  <Autocomplete
-                    sx={{ ml: 4, width: 200 }}
-                    size="small"
-                    options={taxList.data?.data || []}
-                    onChange={(_, value) => {
-                      setValue("taxCode", value.taxCode);
-                      setValue("taxRate", value.taxRate);
+                  <Checkbox
+                    checked={!!watch("withholdingTaxRate")}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+
+                      setValue(
+                        "withholdingTaxRate",
+                        checked ? getWithholdingTaxRate() : 0
+                      );
+                      calculateTotalAmount();
                     }}
-                    disableClearable
-                    getOptionLabel={(option) => option.name}
-                    isOptionEqualToValue={(opt, value) =>
-                      opt.taxCode === value.taxCode
-                    }
-                    renderInput={(params) => (
-                      <TextField {...params} label="Witholding Tax" />
-                    )}
-                  />
+                  ></Checkbox>
                 </Box>
                 <Typography variant="h6">
-                  {formatMoney(watch("taxAmount"))}
+                  {formatMoney(watch("withholdingTaxAmount"))}
                 </Typography>
               </Box>
 
@@ -483,7 +427,7 @@ export default function PurchasePaymentCreate() {
                 variant="contained"
                 color="error"
                 onClick={handleCancel}
-                disabled={createSalesPayment.isLoading}
+                disabled={createPurchasePayment.isLoading}
               >
                 Cancel
               </Button>
@@ -491,7 +435,7 @@ export default function PurchasePaymentCreate() {
             <Grid item>
               <Button
                 variant="contained"
-                disabled={createSalesPayment.isLoading}
+                disabled={createPurchasePayment.isLoading}
                 startIcon={<SaveAltOutlinedIcon />}
                 onClick={handleSubmit(onSubmit)}
               >

@@ -15,7 +15,8 @@ import { useRouter } from "next/router";
 import { Box, Grid, Paper, Typography } from "@mui/material";
 
 export default function Sp2bCreate() {
-  const { data, isLoading, refetch } = trpc.goodsReleaseOrder.findAll.useQuery();
+  const { data, isLoading, refetch } =
+    trpc.goodsReleaseOrder.findAll.useQuery();
   const tableId = useId();
   const router = useRouter();
 
@@ -36,7 +37,7 @@ export default function Sp2bCreate() {
 
   return (
     <MainLayout>
-      <Box sx={{ mb: 2 }}>
+      {/* <Box sx={{ mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item md={4}>
             <Paper sx={{ p: 2 }}>
@@ -85,7 +86,7 @@ export default function Sp2bCreate() {
             </Paper>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
       <MUIDataTable
         title="List SP2B"

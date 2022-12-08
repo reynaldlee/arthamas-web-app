@@ -53,45 +53,45 @@ export default function SalesPaymentIndex() {
               customBodyRender: (value) => formatMoney(value),
             },
           },
-          {
-            name: "docNo",
-            label: "Action",
-            options: {
-              filter: false,
-              customBodyRender: (id) => {
-                return (
-                  <>
-                    <MoreMenu
-                      actions={[
-                        {
-                          label: "Edit",
-                          onClick: () =>
-                            router.push(`/sales/purchases/${id}/edit`),
-                        },
-                        {
-                          label: "Delete Payment",
-                          danger: true,
-                          onClick: () => {
-                            if (
-                              window.confirm(
-                                `Are you sure you want to cancel ${id}`
-                              )
-                            ) {
-                              deletePayment.mutate(id, {
-                                onSuccess: () => {
-                                  router.reload();
-                                },
-                              });
-                            }
-                          },
-                        },
-                      ]}
-                    ></MoreMenu>
-                  </>
-                );
-              },
-            },
-          },
+          // {
+          //   name: "docNo",
+          //   label: "Action",
+          //   options: {
+          //     filter: false,
+          //     customBodyRender: (id) => {
+          //       return (
+          //         <>
+          //           <MoreMenu
+          //             actions={[
+          //               {
+          //                 label: "Edit",
+          //                 onClick: () =>
+          //                   router.push(`/sales/purchases/${id}/edit`),
+          //               },
+          //               {
+          //                 label: "Delete Payment",
+          //                 danger: true,
+          //                 onClick: () => {
+          //                   if (
+          //                     window.confirm(
+          //                       `Are you sure you want to cancel ${id}`
+          //                     )
+          //                   ) {
+          //                     deletePayment.mutate(id, {
+          //                       onSuccess: () => {
+          //                         router.reload();
+          //                       },
+          //                     });
+          //                   }
+          //                 },
+          //               },
+          //             ]}
+          //           ></MoreMenu>
+          //         </>
+          //       );
+          //     },
+          // },
+          // },
         ]}
       />
       <LoaderModal open={isLoading} />

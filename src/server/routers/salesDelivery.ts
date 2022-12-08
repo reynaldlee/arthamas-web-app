@@ -278,4 +278,100 @@ export const salesDeliveryRouter = router({
 
       return { data };
     }),
+
+  scanBarcode: protectedProcedure
+    .input(
+      z.object({
+        barcode: z.string(),
+        goodsReleaseOrderDocNo: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const [productCode, packagingCode, batchNo] = input.barcode.split(" ");
+
+      const checkScanned = await prisma.salesDeliveryItemDetail.findFirst({
+        where: {
+          barcode: input.barcode,
+          goodsReleaseOrderDocNo: input.goodsReleaseOrderDocNo,
+          orgCode: ctx.user.orgCode,
+        },
+      });
+
+      if (checkScanned) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Product barcode sudah pernah di scan",
+        });
+      }
+
+      const prod = await prisma.productPackaging.findFirst({
+        where: {
+          orgCode: ctx.user.orgCode,
+          productCode: productCode,
+          packagingCode: packagingCode,
+        },
+      });
+
+      if (!prod) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Product Tidak ditemukan",
+        });
+      }
+
+      await prisma.$transaction(async (prisma) => {
+        await prisma.salesDeliveryItemDetail.create({
+          data: {
+            barcode: input.barcode,
+            goodsReleaseOrderDocNo: input.goodsReleaseOrderDocNo,
+            batchNo: batchNo,
+            productCode: productCode,
+            packagingCode: packagingCode,
+            orgCode: ctx.user.orgCode,
+            createdBy: ctx.user.username,
+            updatedBy: ctx.user.username,
+          },
+        });
+      });
+
+      return { data: prod };
+    }),
+
+  getScannedProducts: protectedProcedure
+    .input(
+      z.object({
+        goodsReleaseOrderDocNo: z.string(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const data = await prisma.salesDeliveryItemDetail.findMany({
+        where: {
+          orgCode: ctx.user.orgCode,
+          goodsReleaseOrderDocNo: input.goodsReleaseOrderDocNo,
+        },
+      });
+
+      return { data };
+    }),
+
+  deleteScannedProduct: protectedProcedure
+    .input(
+      z.object({
+        barcode: z.string(),
+        goodReleaseOrderDocNo: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const data = await prisma.salesDeliveryItemDetail.delete({
+        where: {
+          barcode_goodsReleaseOrderDocNo_orgCode: {
+            barcode: input.barcode,
+            goodsReleaseOrderDocNo: input.goodReleaseOrderDocNo,
+            orgCode: ctx.user.orgCode,
+          },
+        },
+      });
+
+      return { data };
+    }),
 });

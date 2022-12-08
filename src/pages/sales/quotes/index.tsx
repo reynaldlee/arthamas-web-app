@@ -45,7 +45,7 @@ export default function SalesQuoteIndex() {
 
   return (
     <MainLayout>
-      <Box>
+      {/* <Box>
         <Grid container spacing={2}>
           <Grid item md={4}>
             <Paper sx={{ p: 2 }}>
@@ -94,7 +94,7 @@ export default function SalesQuoteIndex() {
             </Paper>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
       <Box p={2}>
         <Link href="/sales/quotes/create">

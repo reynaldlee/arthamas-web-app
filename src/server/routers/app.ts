@@ -34,6 +34,7 @@ import { stockTransferRouter } from "./stockTransfer";
 import { purchaseOrderRouter } from "./purchaseOrder";
 import { purchaseReceiptRouter } from "./purchaseReceipt";
 import { purchaseInvoiceRouter } from "./purchaseInvoice";
+import { purchasePaymentRouter } from "./purchasePayment";
 
 /**
  * Create your application's root router
@@ -72,6 +73,7 @@ export const appRouter = router({
   purchaseOrder: purchaseOrderRouter,
   purchaseInvoice: purchaseInvoiceRouter,
   purchaseReceipt: purchaseReceiptRouter,
+  purchasePayment: purchasePaymentRouter,
   service: serviceRouter,
   stockTransfer: stockTransferRouter,
   truck: truckRouter,

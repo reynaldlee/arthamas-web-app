@@ -52,10 +52,10 @@ export default function Sp2bCreate() {
     name: "goodsReleaseOrderItems",
   });
 
-    const salesOrder = trpc.salesOrder.find.useQuery(salesOrderDocNo!, {
-        enabled: !!salesOrderDocNo,
-        trpc: {}
-    });
+  const salesOrder = trpc.salesOrder.find.useQuery(salesOrderDocNo!, {
+    enabled: !!salesOrderDocNo,
+    trpc: {},
+  });
 
   const warehouseList = trpc.warehouse.findAll.useQuery();
 
@@ -64,16 +64,14 @@ export default function Sp2bCreate() {
     label: string;
   }>({ id: "", label: "" });
 
-  const createGoodsReleaseOrder = trpc.goodsReleaseOrder.create.useMutation(
-    {
-      onError: (err) => {
-        console.log(err);
-      },
-      onSuccess: () => {
-        router.push("/sales/sp2b");
-      },
-    }
-  );
+  const createGoodsReleaseOrder = trpc.goodsReleaseOrder.create.useMutation({
+    onError: (err) => {
+      console.log(err);
+    },
+    onSuccess: () => {
+      router.push("/sales/sp2b");
+    },
+  });
 
   useEffect(() => {
     if (salesOrder.data) {

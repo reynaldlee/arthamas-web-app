@@ -40,7 +40,7 @@ export default function SalesOrderIndex() {
 
   return (
     <MainLayout>
-      <Box>
+      {/* <Box>
         <Grid container spacing={2}>
           <Grid item md={4}>
             <Paper sx={{ p: 2 }}>
@@ -89,7 +89,7 @@ export default function SalesOrderIndex() {
             </Paper>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
       <Box p={2}>
         <Link href="/sales/orders/create">

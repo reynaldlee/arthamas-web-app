@@ -240,6 +240,16 @@ export default function PurchaseInvoiceCreate() {
         <>
           <Grid container sx={{ pt: 3 }} gap={2}>
             <Grid item md={3} xs={12}>
+              <TextField
+                label="Inv No"
+                value={watch("docNo")}
+                fullWidth
+                onChange={(e) => {
+                  setValue("docNo", e.target.value);
+                }}
+              />
+            </Grid>
+            <Grid item md={3} xs={12}>
               <DatePicker
                 label="Invoice Date"
                 onChange={(value) => {

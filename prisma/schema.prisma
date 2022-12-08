@@ -328,6 +328,7 @@ model Supplier {
   deletedAt            DateTime?
   purchaseOrders       PurchaseOrder[]
   purchaseInvoice      PurchaseInvoice[]
+  PurchasePayment      PurchasePayment[]
 
   @@id([supplierCode, orgCode])
 }
@@ -1013,14 +1014,25 @@ model SalesDeliveryItem {
 
 //TODO: diisi nomor barcode yg sudah di scan
 model SalesDeliveryItemDetail {
-  barcode           String
-  salesDeliveryItem SalesDeliveryItem @relation(fields: [docNo, lineNo, orgCode], references: [docNo, lineNo, orgCode])
-  docNo             String            @db.VarChar(40)
-  lineNo            Int
-  orgCode           String            @db.VarChar(20)
-  org               Org               @relation(fields: [orgCode], references: [orgCode])
+  barcode                  String
+  // salesDeliveryItem SalesDeliveryItem @relation(fields: [docNo, lineNo, orgCode], references: [docNo, lineNo, orgCode])
+  goodsReleaseOrderDocNo   String             @db.VarChar(40)
+  productCode              String?
+  packagingCode            String?            @db.VarChar(10)
+  batchNo                  String?
+  docNo                    String?            @db.VarChar(40)
+  orgCode                  String             @db.VarChar(20)
+  org                      Org                @relation(fields: [orgCode], references: [orgCode])
+  SalesDeliveryItem        SalesDeliveryItem? @relation(fields: [salesDeliveryItemDocNo, salesDeliveryItemLineNo, salesDeliveryItemOrgCode], references: [docNo, lineNo, orgCode])
+  salesDeliveryItemDocNo   String?            @db.VarChar(40)
+  salesDeliveryItemLineNo  Int?
+  salesDeliveryItemOrgCode String?            @db.VarChar(20)
+  createdBy                String             @db.VarChar(20)
+  updatedBy                String             @db.VarChar(20)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
 
-  @@id([docNo, lineNo, orgCode, barcode])
+  @@id([barcode, goodsReleaseOrderDocNo, orgCode])
 }
 
 model SalesInvoice {
@@ -1503,6 +1515,7 @@ model PurchasePayment {
   date                   DateTime                @db.Date
   currencyCode           String                  @db.VarChar(3)
   currency               Currency                @relation(fields: [currencyCode, orgCode], references: [currencyCode, orgCode])
+  supplier               Supplier                @relation(fields: [supplierCode, orgCode], references: [supplierCode, orgCode])
   exchangeRate           Decimal                 @db.Decimal(15, 2)
   taxRate                Float?                  @default(0)
   taxAmount              Decimal?                @default(0) @db.Decimal(15, 2)
@@ -1521,13 +1534,13 @@ model PurchasePayment {
   updatedAt              DateTime                @updatedAt
   deletedAt              DateTime?
   purchasePaymentDetails PurchasePaymentDetail[]
+  supplierCode           String                  @db.VarChar(20)
 
   @@id([docNo, orgCode])
 }
 
 model PurchasePaymentDetail {
   docNo                String          @db.VarChar(40)
-  lineNo               Int
   purchaseInvoiceDocNo String          @db.VarChar(40)
   purchasePayment      PurchasePayment @relation(fields: [docNo, orgCode], references: [docNo, orgCode])
   purchaseInvoice      PurchaseInvoice @relation(fields: [purchaseInvoiceDocNo, orgCode], references: [docNo, orgCode])
@@ -1535,7 +1548,7 @@ model PurchasePaymentDetail {
   org                  Org             @relation(fields: [orgCode], references: [orgCode])
   orgCode              String          @db.VarChar(20)
 
-  @@id([docNo, lineNo])
+  @@id([docNo, purchaseInvoiceDocNo])
 }
 
 model SKTD {

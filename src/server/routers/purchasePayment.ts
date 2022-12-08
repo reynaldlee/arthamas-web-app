@@ -7,7 +7,7 @@ import { prisma } from "@/prisma/index";
 import { z } from "zod";
 
 import { router } from "../trpc";
-import { Prisma } from "@prisma/client";
+import { Prisma, PurchaseInvoiceStatus } from "@prisma/client";
 
 export const purchasePaymentDetailSchema = z.object({
   purchaseInvoiceDocNo: z.string(),
@@ -17,10 +17,9 @@ export const purchasePaymentDetailSchema = z.object({
 export const purchasePaymentSchema = z.object({
   refNo: z.string(),
   date: z.date(),
-  customerCode: z.string(),
+  supplierCode: z.string(),
   currencyCode: z.string(),
   exchangeRate: z.number(),
-  paymentMethod: z.string(),
   withholdingTaxRate: z.number(),
   withholdingTaxAmount: z.number(),
   totalBeforeTax: z.number(),
@@ -33,7 +32,9 @@ export const purchasePaymentRouter = router({
   findAll: protectedProcedure.query(async ({ ctx }) => {
     const data = await prisma.purchasePayment.findMany({
       where: { orgCode: ctx.user.orgCode, deletedAt: null },
-      include: {},
+      include: {
+        supplier: true,
+      },
       orderBy: {
         createdAt: "desc",
       },
@@ -51,8 +52,11 @@ export const purchasePaymentRouter = router({
         },
       },
       include: {
-        purchasePaymentDetails: true,
-        customer: true,
+        purchasePaymentDetails: {
+          include: {
+            purchaseInvoice: true,
+          },
+        },
       },
     });
 
@@ -73,7 +77,7 @@ export const purchasePaymentRouter = router({
         });
       }
 
-      const docNo = generateDocNo("SP-");
+      const docNo = generateDocNo("PP-");
 
       const data = await prisma.$transaction(async (prisma) => {
         const data = await prisma.purchasePayment.create({
@@ -98,7 +102,7 @@ export const purchasePaymentRouter = router({
         (i) => i.purchaseInvoiceDocNo
       );
 
-      await updatepurchaseInvoicesStatus(
+      await updatePurchaseInvoicesStatus(
         prisma,
         updatedInvoiceNos,
         ctx.user.orgCode
@@ -115,33 +119,11 @@ export const purchasePaymentRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const { docNo, fields } = input;
-      const { purchasePaymentItems, purchasePaymentServices, ...updatedField } =
-        fields;
+      const { purchasePaymentDetails, ...updatedField } = fields;
 
       const data = await prisma.$transaction(async (prisma) => {
-        await prisma.purchasePaymentItem.deleteMany({
-          where: {
-            docNo: docNo,
-            orgCode: ctx.user.orgCode,
-          },
-        });
-
-        await prisma.purchasePaymentItem.createMany({
-          data: purchasePaymentItems.map((item) => ({
-            docNo: docNo,
-            ...item,
-          })) as any,
-        });
-
-        await prisma.purchasePaymentService.deleteMany({
-          where: {
-            docNo: docNo,
-            orgCode: ctx.user.orgCode,
-          },
-        });
-
-        await prisma.purchasePaymentItem.createMany({
-          data: purchasePaymentServices.map((item) => ({
+        await prisma.purchasePaymentDetail.createMany({
+          data: purchasePaymentDetails.map((item) => ({
             docNo: docNo,
             ...item,
           })) as any,
@@ -187,7 +169,7 @@ export const purchasePaymentRouter = router({
           (i) => i.purchaseInvoiceDocNo
         );
 
-        await updatepurchaseInvoicesStatus(
+        await updatePurchaseInvoicesStatus(
           prisma,
           updatedInvoices,
           ctx.user.orgCode
@@ -200,7 +182,7 @@ export const purchasePaymentRouter = router({
     }),
 });
 
-export const updatepurchaseInvoicesStatus = async (
+export const updatePurchaseInvoicesStatus = async (
   prisma: Prisma.TransactionClient,
   purchaseInvoiceDocNos: string[],
   orgCode: string
@@ -235,7 +217,7 @@ export const updatepurchaseInvoicesStatus = async (
 
       const paidAmount = purchaseInvoicePayments._sum.amount || 0;
       const unpaidAmount = purchaseInvoice.totalAmount - paidAmount;
-      let status: purchaseInvoiceStatus = "Open";
+      let status: PurchaseInvoiceStatus = "Open";
       if (unpaidAmount === 0) {
         status = "Paid";
       }

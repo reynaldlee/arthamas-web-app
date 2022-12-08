@@ -32,7 +32,7 @@ export default function SalesInvoiceIndex() {
 
   return (
     <MainLayout>
-      <Box>
+      {/* <Box>
         <Grid container spacing={2}>
           <Grid item md={4}>
             <Paper sx={{ p: 2 }}>
@@ -84,7 +84,7 @@ export default function SalesInvoiceIndex() {
             </Paper>
           </Grid>
         </Grid>
-      </Box>
+      </Box> */}
 
       <Box p={2}>
         <Link href="/sales/invoices/create">

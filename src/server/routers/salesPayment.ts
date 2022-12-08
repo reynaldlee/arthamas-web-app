@@ -2,10 +2,6 @@ import { protectedProcedure } from "./../trpc";
 import { TRPCError } from "@trpc/server";
 
 import { generateDocNo } from "../../utils/docNo";
-
-import { serviceSchema } from "./service";
-import { packagingSchema } from "./packaging";
-import { productSchema } from "src/server/routers/product";
 import { prisma } from "@/prisma/index";
 import { z } from "zod";
 

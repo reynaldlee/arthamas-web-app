@@ -118,29 +118,36 @@ export default function SalesDeliveryCreate() {
     }
   };
 
+  const scannedProducts = trpc.salesDelivery.getScannedProducts.useQuery(
+    {
+      goodsReleaseOrderDocNo: goodsReleaseOrderDocNo!,
+    },
+    {
+      enabled: !!goodsReleaseOrderDocNo,
+    }
+  );
+
+  const { mutate: scanBarcode } = trpc.salesDelivery.scanBarcode.useMutation();
+  const deleteScanned = trpc.salesDelivery.deleteScannedProduct.useMutation();
+
   const handleBarcodeScan = (evt: KeyboardEvent<HTMLInputElement>) => {
     // evt.preventDefault();
 
     if (evt.key === "Enter" || evt.keyCode === 13) {
-      // Do something
-
-      if (evt.currentTarget.value === "11111") {
-        salesDeliveryItemDetails.append({
-          barcode: "11111",
-          productName: "ATLANTA MARINE D 3005",
-          batchNo: "1489232",
-        });
-        evt.currentTarget.value = "";
-      } else if (evt.currentTarget.value === "00000") {
-        salesDeliveryItemDetails.append({
-          barcode: "00000",
-          productName: "AURELIA TI 3030",
-          batchNo: "2093432",
-        });
-        evt.currentTarget.value = "";
-      } else {
-        alert("Barcode tidak ditemukan atau salah");
-      }
+      scanBarcode(
+        {
+          barcode: evt.currentTarget.value,
+          goodsReleaseOrderDocNo: goodsReleaseOrderDocNo!,
+        },
+        {
+          onSuccess: () => {
+            scannedProducts.refetch();
+          },
+          onError: (e) => {
+            alert(e.message);
+          },
+        }
+      );
     }
   };
 
@@ -359,7 +366,8 @@ export default function SalesDeliveryCreate() {
           ) : null}
 
           <MUIDataTable
-            data={watch("salesDeliveryItemDetails")}
+            title=""
+            data={scannedProducts.data?.data || []}
             options={{
               search: false,
               download: false,
@@ -369,12 +377,42 @@ export default function SalesDeliveryCreate() {
             }}
             columns={[
               {
-                name: "productName",
-                label: "Product Name",
+                name: "productCode",
+                label: "Product",
+              },
+              {
+                name: "packagingCode",
+                label: "Packaging",
               },
               {
                 name: "batchNo",
                 label: "Batch No",
+              },
+              {
+                name: "barcode",
+                label: "DELETE",
+                options: {
+                  customBodyRender: (_barcode) => (
+                    <Button
+                      color="error"
+                      onClick={() => {
+                        deleteScanned.mutate(
+                          {
+                            barcode: _barcode,
+                            goodReleaseOrderDocNo: goodsReleaseOrderDocNo,
+                          },
+                          {
+                            onSuccess: () => {
+                              scannedProducts.refetch();
+                            },
+                          }
+                        );
+                      }}
+                    >
+                      HAPUS
+                    </Button>
+                  ),
+                },
               },
             ]}
           />
