@@ -37,7 +37,7 @@ export const salesInvoiceSchema = z.object({
   dueDate: z.date(),
   salesDeliveryDocNo: z.string(),
   exchangeRate: z.number(),
-  bankAccountCode: z.string().optional().nullable(),
+  bankAccountCode: z.string(),
   totalProduct: z.number(),
   totalService: z.number(),
   taxAmount: z.number(),
@@ -181,6 +181,14 @@ export const salesInvoiceRouter = router({
               dueDate: input.dueDate,
               status: "Open",
               orgCode: ctx.user.orgCode,
+              bankAccount: {
+                connect: {
+                  bankAccountCode_orgCode: {
+                    bankAccountCode: salesInvoice.bankAccountCode,
+                    orgCode: ctx.user.orgCode,
+                  },
+                },
+              },
               salesInvoiceItems: {
                 createMany: {
                   data: salesInvoiceItems,

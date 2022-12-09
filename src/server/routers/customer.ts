@@ -4,7 +4,7 @@ import { z } from "zod";
 import { customerGroupSchema } from "./customerGroup";
 
 export const customerSchema = z.object({
-  customerCode: z.string().max(20),
+  customerCode: z.string(),
   name: z.string().max(40),
   address: z.string().optional().nullable(),
   type: z.string().optional().nullable(),

@@ -137,7 +137,7 @@ export default function SalesDeliveryIndex() {
                         {
                           label: "Print Surat Jalan",
                           onClick: () =>
-                            router.push(`/sales/deliveries/${id}/print`),
+                            window.open(`/sales/deliveries/${id}/print`),
                         },
                         {
                           label: "Create Invoice",
